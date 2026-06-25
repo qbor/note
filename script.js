@@ -56,16 +56,18 @@ async function init() {
 }
 
 // ==========================================
-// 4. 用户与权限状态统一控制
+// 4. 用户与权限状态统一控制（完美校准版）
 // ==========================================
 function handleUserStatus(user) {
     currentUser = user;
     if (user) {
-        // 💡 适配真云端：真实邮箱直接存放在 user.email 属性中
-        userEmailSpan.innerText = user.email;
-        authBtn.innerText = '退出登录';
-        newNoteBtn.disabled = false;
-        fetchNotesFromCloud(); // 自动拉取该用户的云端笔记
+        // 💡 核心修复：全兼容抓取真云端返回的邮箱地址
+        const realEmail = user.email || (user.user_metadata && user.user_metadata.email) || "已登录用户";
+        
+        userEmailSpan.innerText = realEmail; // 刷新显示你的邮箱
+        authBtn.innerText = '退出登录';      // 强制按钮文字变为退出登录
+        newNoteBtn.disabled = false;         // 保持解禁新建按钮
+        fetchNotesFromCloud();               // 自动拉取该用户的云端笔记
     } else {
         userEmailSpan.innerText = '';
         authBtn.innerText = '登录 / 注册';
@@ -79,13 +81,6 @@ function handleUserStatus(user) {
     }
 }
 
-function handleAuthButtonClick() {
-    if (currentUser) {
-        mySupabase.auth.signOut();
-    } else {
-        authModal.classList.remove('hidden');
-    }
-}
 
 // ==========================================
 // 5. 真实云端：注册与登录逻辑（铁面无私版）
