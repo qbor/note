@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云上笔记 - 随心记录，云端相伴</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 💡 核心：抛弃本地错乱的文件，直接引入官方最稳定的云端网络引擎 -->
+    <script src="supabase.js"></script>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="header-container">
+            <div class="logo-container">
+                <svg class="logo-svg" viewBox="0 0 100 100" width="40" height="40">
+                    <path d="M20 70 L80 70 A15 15 0 0 0 80 40 A10 10 0 0 0 65 25 A20 20 0 0 0 35 30 A15 15 0 0 0 20 45 Z" fill="#e0f2fe"/>
+                    <rect x="35" y="40" width="30" height="25" rx="3" fill="#3b82f6" />
+                    <line x1="35" y1="45" x2="65" y2="45" stroke="#ffffff" stroke-width="2"/>
+                    <path d="M65 35 L75 25 L80 30 L70 40 Z" fill="#f59e0b"/>
+                </svg>
+                <h1>云上笔记</h1>
+            </div>
+            <div class="user-auth-zone">
+                <span id="user-email" class="user-email"></span>
+                <button id="auth-btn" class="btn-secondary">登录 / 注册</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体内容区 -->
+    <main class="main-container">
+        <section class="sidebar">
+            <button id="new-note-btn" class="btn-primary" disabled>+ 新建笔记</button>
+            <div id="notes-list" class="notes-list">
+                <div class="placeholder-text">请先登录以同步云端笔记</div>
+            </div>
+        </section>
+
+        <section class="editor-area">
+            <input type="text" id="note-title" placeholder="无标题笔记" class="input-title" disabled>
+            <textarea id="note-content" placeholder="开始在云端记录你的想法..." class="textarea-content" disabled></textarea>
+            <div class="editor-footer">
+                <button id="delete-note-btn" class="btn-danger" style="float: left;" disabled>删除笔记</button>
+                <span id="save-status" class="status-text">未登录</span>
+            </div>
+        </section>
+    </main>
+
+    <!-- 登录/注册 弹窗 -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">账户登录</h2>
+            <input type="email" id="auth-input-email" placeholder="请输入邮箱">
+            <input type="password" id="auth-input-password" placeholder="请输入密码">
+            <div class="modal-buttons">
+                <button id="submit-login" class="btn-primary">登录</button>
+                <button id="submit-register" class="btn-secondary">注册账号</button>
+                <button id="close-modal" class="btn-text">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

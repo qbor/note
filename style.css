@@ -1,0 +1,237 @@
+/* 全局样式重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    background-color: #f8fafc;
+    color: #334155;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 导航栏 */
+header {
+    background-color: #ffffff;
+    padding: 10px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-container h1 {
+    font-size: 20px;
+    color: #1e3a8a;
+    font-weight: 600;
+}
+
+/* 主体布局 */
+.main-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* 侧边栏 */
+.sidebar {
+    width: 260px;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.notes-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.note-item {
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.note-item:hover, .note-item.active {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.note-item-title {
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 编辑器区域 */
+.editor-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    padding: 30px;
+}
+
+.input-title {
+    border: none;
+    outline: none;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #1e293b;
+}
+
+.textarea-content {
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #334155;
+}
+
+.editor-footer {
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+    text-align: right;
+}
+
+.status-text {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* 顶部导航增强 */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.user-auth-zone {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.user-email {
+    font-size: 14px;
+    color: #64748b;
+}
+.btn-secondary {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.btn-secondary:hover {
+    background-color: #e2e8f0;
+}
+.btn-text {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+}
+
+/* 弹窗样式 */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+.modal.hidden {
+    display: none !important;
+}
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+.modal-content h2 {
+    font-size: 20px;
+    color: #1e293b;
+}
+.modal-content input {
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    outline: none;
+}
+.modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+.placeholder-text {
+    text-align: center;
+    color: #94a3b8;
+    margin-top: 40px;
+    font-size: 14px;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+.btn-danger:disabled {
+    background-color: #f1f5f9;
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
