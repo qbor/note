@@ -2,7 +2,7 @@
 // 1. 核心云端配置区域
 // ==========================================
 const SUPABASE_URL = 'https://fcfnxmptiffipykvemuj.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZm54bXB0aWZmaXB5a3ZlbXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzNTMwNTksImV4cCI6MjA5NzkyOTA1OX0.fl-ajaZJeM-OdWdivAO7JiWnboYjhjHL9Km5-POwhO8';
 
 const mySupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
