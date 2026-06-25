@@ -251,12 +251,25 @@ async function fetchNotesFromCloud() {
 }
 
 function renderNotesList() {
-    notesList.innerHTML = notes.length === 0 ? '<div class="placeholder-text">暂无云端笔记，点击新建</div>' : '';
+    notesList.innerHTML = '';
+    if (notes.length === 0) {
+        const placeholder = document.createElement('div');
+        placeholder.classList.add('placeholder-text');
+        placeholder.textContent = '暂无云端笔记，点击新建';
+        notesList.appendChild(placeholder);
+        return;
+    }
+
     notes.forEach(note => {
         const div = document.createElement('div');
         div.classList.add('note-item');
         if (note.id === activeNoteId) div.classList.add('active');
-        div.innerHTML = `<div class="note-item-title">${note.title || '无标题笔记'}</div>`;
+
+        const titleDiv = document.createElement('div');
+        titleDiv.classList.add('note-item-title');
+        titleDiv.textContent = note.title || '无标题笔记';
+
+        div.appendChild(titleDiv);
         div.addEventListener('click', () => { activeNoteId = note.id; renderNotesList(); loadActiveNote(); });
         notesList.appendChild(div);
     });
@@ -345,7 +358,7 @@ async function confirmGeneratedTitle() {
     saveStatus.innerText = '正在保存标题...';
     confirmTitleBtn.disabled = true;
     try {
-        const { error } = await mySupabase.from('notes').update({ title: newTitle }).eq('id', activeNoteId);
+        const { error } = await mySupabase.from('notes').update({ title: newTitle }).eq('id', activeNoteId).eq('user_id', currentUser?.id);
         if (error) {
             alert('保存标题失败');
             saveStatus.innerText = '保存失败';
@@ -382,7 +395,7 @@ function updateCurrentNote() {
 
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
-        await mySupabase.from('notes').update({ title: targetTitle, content: targetContent }).eq('id', targetSaveId);
+        await mySupabase.from('notes').update({ title: targetTitle, content: targetContent }).eq('id', targetSaveId).eq('user_id', currentUser?.id);
         if (activeNoteId === targetSaveId) {
             saveStatus.innerText = '所有更改已实时保存至云端';
         }
@@ -396,7 +409,7 @@ async function deleteCurrentNote() {
     deleteNoteBtn.disabled = true;
     saveStatus.innerText = '正在从云端删除...';
     
-    const { error } = await mySupabase.from('notes').delete().eq('id', activeNoteId);
+    const { error } = await mySupabase.from('notes').delete().eq('id', activeNoteId).eq('user_id', currentUser?.id);
     if (!error) {
         notes = notes.filter(n => n.id !== activeNoteId);
         activeNoteId = notes.length > 0 ? notes[0].id : null;
