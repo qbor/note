@@ -67,6 +67,11 @@ header {
 .btn-primary:hover {
     background-color: #2563eb;
 }
+.btn-primary:disabled,
+.btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
 .notes-list {
     flex: 1;
@@ -194,6 +199,18 @@ header {
     gap: 15px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
+.auth-mode-buttons {
+    display: flex;
+    gap: 10px;
+}
+.auth-mode-buttons button {
+    flex: 1;
+}
+.auth-error {
+    color: #dc2626;
+    font-size: 13px;
+    min-height: 18px;
+}
 .modal-content h2 {
     font-size: 20px;
     color: #1e293b;
@@ -204,11 +221,30 @@ header {
     border-radius: 6px;
     outline: none;
 }
+.modal-content input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
 .modal-buttons {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-top: 10px;
+}
+
+/* Title confirm modal overrides */
+#title-confirm-modal .modal-content {
+    width: 420px;
+}
+#generated-title-input {
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    outline: none;
+}
+#generated-title-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
 }
 .placeholder-text {
     text-align: center;

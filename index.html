@@ -41,6 +41,7 @@
             <input type="text" id="note-title" placeholder="无标题笔记" class="input-title" disabled>
             <textarea id="note-content" placeholder="开始在云端记录你的想法..." class="textarea-content" disabled></textarea>
             <div class="editor-footer">
+                <button id="generate-title-btn" class="btn-secondary" style="float: left; margin-right:8px;" disabled>从内容生成标题</button>
                 <button id="delete-note-btn" class="btn-danger" style="float: left;" disabled>删除笔记</button>
                 <span id="save-status" class="status-text">未登录</span>
             </div>
@@ -50,13 +51,29 @@
     <!-- 登录/注册 弹窗 -->
     <div id="auth-modal" class="modal hidden">
         <div class="modal-content">
+            <div class="auth-mode-buttons">
+                <button type="button" id="login-mode-btn" class="btn-primary auth-mode-active">登录</button>
+                <button type="button" id="register-mode-btn" class="btn-secondary">注册</button>
+            </div>
             <h2 id="modal-title">账户登录</h2>
+            <div id="auth-error" class="auth-error"></div>
             <input type="email" id="auth-input-email" placeholder="请输入邮箱">
             <input type="password" id="auth-input-password" placeholder="请输入密码">
             <div class="modal-buttons">
-                <button id="submit-login" class="btn-primary">登录</button>
-                <button id="submit-register" class="btn-secondary">注册账号</button>
+                <button id="submit-auth" class="btn-primary">登录</button>
                 <button id="close-modal" class="btn-text">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 生成标题 确认弹窗 -->
+    <div id="title-confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>确认/编辑标题</h2>
+            <input type="text" id="generated-title-input" placeholder="自动生成的标题" />
+            <div class="modal-buttons">
+                <button id="confirm-title-btn" class="btn-primary">确认并保存</button>
+                <button id="cancel-title-btn" class="btn-secondary">取消</button>
             </div>
         </div>
     </div>

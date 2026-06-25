@@ -13,6 +13,7 @@
         };
         return {
             auth: {
+                __authStateChangeCallback: null,
                 getUser: async function () {
                     var token = localStorage.getItem('sb_real_token');
                     if (!token) return { data: { user: null }, error: null };
@@ -24,6 +25,7 @@
                     } catch (e) { return { data: { user: null }, error: e }; }
                 },
                 onAuthStateChange: function (callback) {
+                    this.__authStateChangeCallback = callback;
                     setTimeout(async function () {
                         var token = localStorage.getItem('sb_real_token');
                         if (token) {
@@ -50,11 +52,16 @@
                         var data = await res.json();
                         if (!res.ok) return { data: null, error: data };
                         localStorage.setItem('sb_real_token', data.access_token);
+                        if (this.__authStateChangeCallback) {
+                            var userRes = await this.getUser();
+                            this.__authStateChangeCallback('SIGNED_IN', { user: userRes.data?.user ?? null });
+                        }
                         return { data: data, error: null };
                     } catch (e) { return { data: null, error: e }; }
                 },
                 signOut: async function () {
                     localStorage.removeItem('sb_real_token');
+                    if (this.__authStateChangeCallback) this.__authStateChangeCallback('SIGNED_OUT', null);
                     return { error: null };
                 }
             },
@@ -88,7 +95,7 @@
                                     try {
                                         var res = await fetch(supabaseUrl + '/rest/v1/' + tableName, { method: 'POST', headers: h, body: JSON.stringify(arr) });
                                         var data = await res.json();
-                                        return { data: data[0] || data, error: res.ok ? null : data };
+                                        return { data: data, error: res.ok ? null : data };
                                     } catch (e) { return { data: null, error: e }; }
                                 })();
                             }
