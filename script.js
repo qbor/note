@@ -27,17 +27,13 @@ const emailInput = document.getElementById('auth-input-email');
 const passwordInput = document.getElementById('auth-input-password');
 
 // ==========================================
-// 3. 系统初始化与事件绑定（包含修复退出登录）
+// 3. 系统初始化与事件绑定
 // ==========================================
 async function init() {
-    const { data: { user } } = await mySupabase.auth.getUser();
-    handleUserStatus(user);
-
     mySupabase.auth.onAuthStateChange((event, session) => {
         handleUserStatus(session?.user || null);
     });
 
-    // 💡 修复退出登录：在这里精准使用你的 mySupabase 进行退出，并强制重刷
     authBtn.addEventListener('click', async () => {
         if (currentUser) {
             await mySupabase.auth.signOut();
@@ -62,6 +58,8 @@ async function init() {
 // 4. 用户与权限状态统一控制
 // ==========================================
 function handleUserStatus(user) {
+    if (currentUser?.id === user?.id && currentUser !== null) return;
+    
     currentUser = user;
     if (user) {
         const realEmail = user.email || (user.user_metadata && user.user_metadata.email) || "已登录用户";
@@ -104,7 +102,7 @@ async function handleLogin() {
     if(!emailInput.value || !passwordInput.value) return alert('请输入邮箱和密码');
     saveStatus.innerText = '正在验证登录...';
 
-    const { data, error } = await mySupabase.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
+    const { data, error } = await mySupabase.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
     if (error) {
         const errorMsg = error.message || error.msg || error.error_description || JSON.stringify(error);
         alert('登录失败原因: ' + errorMsg);
@@ -144,6 +142,7 @@ function renderNotesList() {
 function loadActiveNote() {
     const currentNote = notes.find(n => n.id === activeNoteId);
     if (currentNote) {
+        saveStatus.innerText = '已加载云端内容';
         noteTitle.value = currentNote.title || '';
         noteContent.value = currentNote.content || '';
         noteTitle.disabled = false;
@@ -157,44 +156,61 @@ function loadActiveNote() {
 }
 
 // ==========================================
-// 7. 云端新建、更新、删除逻辑（💡包含修复新建不能打字）
+// 7. 云端新建、更新、删除逻辑
 // ==========================================
 async function createNewNote() {
+    // 💡 解决连击隐患：点击瞬间立刻禁用按钮，并显示 loading 状态文案
+    newNoteBtn.disabled = true;
+    saveStatus.innerText = '正在创建新笔记...';
+
     const newNoteData = { user_id: currentUser.id, title: '新笔记', content: '' };
     const { data, error } = await mySupabase.from('notes').insert([newNoteData]).select();
     
     if (!error && data && data.length > 0) {
-        // 💡 核心修复：精准抓取真云端数组中的第一个笔记单项对象
         const createdNote = data[0]; 
         notes.unshift(createdNote);
         activeNoteId = createdNote.id; 
         renderNotesList();
-        loadActiveNote(); // 此时 activeNoteId 完美成立，右侧输入框秒亮！
+        loadActiveNote(); 
     } else {
         alert('新建笔记失败，请确认您的 Supabase 后台 notes 表的 id 字段已开启自增！');
     }
+    
+    // 💡 异步请求结束后，重新恢复新建按钮的可用状态
+    newNoteBtn.disabled = false;
 }
 
 let saveTimeout;
 function updateCurrentNote() {
     const currentNote = notes.find(n => n.id === activeNoteId);
     if (!currentNote) return;
-    currentNote.title = noteTitle.value;
-    currentNote.content = noteContent.value;
+    
+    const targetSaveId = activeNoteId;
+    const targetTitle = noteTitle.value;
+    const targetContent = noteContent.value;
+
+    currentNote.title = targetTitle;
+    currentNote.content = targetContent;
 
     const activeItem = document.querySelector('.note-item.active .note-item-title');
-    if (activeItem) activeItem.innerText = noteTitle.value || '无标题笔记';
+    if (activeItem) activeItem.innerText = targetTitle || '无标题笔记';
 
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
-        await mySupabase.from('notes').update({ title: noteTitle.value, content: noteContent.value }).eq('id', activeNoteId);
-        saveStatus.innerText = '所有更改已实时保存至云端';
+        await mySupabase.from('notes').update({ title: targetTitle, content: targetContent }).eq('id', targetSaveId);
+        if (activeNoteId === targetSaveId) {
+            saveStatus.innerText = '所有更改已实时保存至云端';
+        }
     }, 800);
 }
 
 async function deleteCurrentNote() {
     if (!activeNoteId || !confirm('确定要删除这篇笔记吗？此操作不可撤销。')) return;
+    
+    // 💡 同样在删除期间禁用按钮防御连击
+    deleteNoteBtn.disabled = true;
     saveStatus.innerText = '正在从云端删除...';
+    
     const { error } = await mySupabase.from('notes').delete().eq('id', activeNoteId);
     if (!error) {
         notes = notes.filter(n => n.id !== activeNoteId);
@@ -205,6 +221,7 @@ async function deleteCurrentNote() {
     } else {
         saveStatus.innerText = '删除失败，请检查网络权限';
     }
+    deleteNoteBtn.disabled = false;
 }
 
 // 启动发令枪
