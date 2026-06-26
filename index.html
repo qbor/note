@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
-    <!-- 已恢复严格 CSP，部署时建议使用服务器端 HTTP 头而不是仅依赖 meta 标签 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com; base-uri 'self'; form-action 'self' https://*.supabase.co https://*.supabase.com; frame-ancestors 'none';">
     <title>云上笔记 - 随心记录，云端相伴</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
-    <!-- 使用本地提供的 supabase.js，避免 CDN integrity 校验失败导致脚本未加载 -->
+    <script src="config.js"></script>
     <script src="supabase.js"></script>
 </head>
 <body>

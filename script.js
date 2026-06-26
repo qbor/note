@@ -1,17 +1,26 @@
 // ==========================================
 // 1. 核心云端配置区域
 // ==========================================
-const SUPABASE_URL = 'https://fcfnxmptiffipykvemuj.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
+const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
+const SUPABASE_URL = SUPABASE_CONFIG.url || 'https://fcfnxmptiffipykvemuj.supabase.co';
+const SUPABASE_KEY = SUPABASE_CONFIG.key || 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
+const DEFAULT_SITE_URL = (typeof window !== 'undefined' && window.location?.origin)
+    ? window.location.origin
+    : '/';
 
-// 如果你希望邮箱确认后跳转到你的 GitHub 网站，请在这里填写完整地址。
+// 如果你希望邮箱确认后跳转到你的 Vercel 部署站点，请在这里填写完整地址。
 // 注意：该 URL 必须在 Supabase 项目 Auth 重定向 URL 中允许。
-// 推荐使用当前页面地址，避免写死到错误的 GitHub Pages 路径。
-const EMAIL_CONFIRM_REDIRECT = window.location.protocol.startsWith('http')
-    ? window.location.origin + window.location.pathname.replace(/index\.html$/, '')
-    : '';
+// 推荐使用当前页面地址，避免写死到错误的路径。
+const EMAIL_CONFIRM_REDIRECT = (() => {
+    if (typeof window !== 'undefined' && window.location?.protocol?.startsWith('http')) {
+        const normalizedPath = window.location.pathname.replace(/index\.html$/i, '').replace(/\/+$/, '');
+        const basePath = normalizedPath ? `${normalizedPath}/` : '/';
+        return `${window.location.origin}${basePath}`;
+    }
+    return DEFAULT_SITE_URL;
+})();
 
-const mySupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const mySupabase = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 let notes = [];
 let activeNoteId = null;
