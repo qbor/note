@@ -5,7 +5,11 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co https://cdn.jsdelivr.net; form-action 'self' https://fcfnxmptiffipykvemuj.supabase.co; frame-ancestors 'self';"
+          "value": "default-src 'self'; script-src 'self' https://jsdelivr.net; connect-src 'self' https://supabase.co https://jsdelivr.net; form-action 'self' https://supabase.co; frame-ancestors 'self'; style-src 'self' 'unsafe-inline';"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         }
       ]
     }
