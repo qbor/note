@@ -5,7 +5,8 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.supabase = {}));
 })(this, (function (exports) { 'use strict';
 
-    var createClient = function (supabaseUrl, supabaseKey) {
+    var createClient = function (supabaseUrl, supabaseKey, options) {
+        var authOptions = (options && options.auth) ? options.auth : {};
         var headers = {
             'apikey': supabaseKey,
             'Authorization': 'Bearer ' + supabaseKey,
@@ -53,6 +54,8 @@
                         var body = { email: creds.email, password: creds.password };
                         if (creds.options && creds.options.emailRedirectTo) {
                             body.redirect_to = creds.options.emailRedirectTo;
+                        } else if (authOptions.redirectTo) {
+                            body.redirect_to = authOptions.redirectTo;
                         }
                         var res = await fetch(supabaseUrl + '/auth/v1/signup', { method: 'POST', headers: headers, body: JSON.stringify(body) });
                         var data = await res.json();

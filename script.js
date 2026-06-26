@@ -2,11 +2,23 @@
 // 1. 核心云端配置区域
 // ==========================================
 const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
-const SUPABASE_URL = SUPABASE_CONFIG.url || 'https://fcfnxmptiffipykvemuj.supabase.co';
+const SUPABASE_URL = SUPABASE_CONFIG.url || (typeof window !== 'undefined' ? window.location.origin + '/supabase-api' : '');
 const SUPABASE_KEY = SUPABASE_CONFIG.key || 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
 const DEFAULT_SITE_URL = (typeof window !== 'undefined' && window.location?.origin)
     ? window.location.origin
     : '/';
+
+const GLOBAL_SUPABASE = (typeof window !== 'undefined') ? window.supabase : undefined;
+if (!GLOBAL_SUPABASE) {
+    console.warn('Supabase SDK 未检测到。请确认 supabase.js 已正确引入。');
+}
+const mySupabase = (typeof GLOBAL_SUPABASE !== 'undefined' && GLOBAL_SUPABASE !== null)
+    ? GLOBAL_SUPABASE.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: {
+            redirectTo: typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''
+        }
+    })
+    : null;
 
 // 如果你希望邮箱确认后跳转到你的 Vercel 部署站点，请在这里填写完整地址。
 // 注意：该 URL 必须在 Supabase 项目 Auth 重定向 URL 中允许。
@@ -19,8 +31,6 @@ const EMAIL_CONFIRM_REDIRECT = (() => {
     }
     return DEFAULT_SITE_URL;
 })();
-
-const mySupabase = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 let notes = [];
 let activeNoteId = null;
@@ -561,4 +571,17 @@ async function deleteCurrentNote() {
 }
 
 // 启动发令枪
-init();
+function startApp() {
+    try {
+        init();
+    } catch (e) {
+        console.error('应用初始化失败', e);
+        if (saveStatus) saveStatus.innerText = '应用初始化失败，请刷新页面';
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
+}

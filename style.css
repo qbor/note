@@ -368,6 +368,15 @@ header {
     font-size: 14px;
 }
 
+.noscript-warning {
+    padding: 18px 16px;
+    text-align: center;
+    background: #fef2f2;
+    color: #b91c1c;
+    border-bottom: 1px solid #fca5a5;
+    font-size: 14px;
+}
+
 .btn-danger {
     background-color: #ef4444;
     color: white;

@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com; base-uri 'self'; form-action 'self' https://*.supabase.co https://*.supabase.com; frame-ancestors 'none';">
     <title>云上笔记 - 随心记录，云端相伴</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
-    <script src="config.js"></script>
-    <script src="supabase.js"></script>
+    <script src="config.js" defer></script>
+    <script src="supabase.js" defer></script>
 </head>
 <body>
+    <noscript>
+        <div class="noscript-warning">请开启 JavaScript 后再访问本网站。</div>
+    </noscript>
     <!-- 顶部导航栏 -->
     <header>
         <div class="header-container">
@@ -87,7 +89,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
     <!-- 调试栏已移除 -->
 </body>
 </html>
