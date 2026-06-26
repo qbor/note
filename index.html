@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; img-src 'self' data:;">
+    <!-- 注意：`frame-ancestors` 必须通过服务器的 HTTP 头设置，meta 标签不会生效。下面添加 `form-action 'self'` 作为客户端临时缓解。 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; img-src 'self' data:; form-action 'self';">
     <title>云上笔记 - 随心记录，云端相伴</title>
     <link rel="stylesheet" href="style.css">
     <!-- 💡 使用官方 Supabase JS SDK，确保认证流程与重定向兼容 -->
