@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 注意：`frame-ancestors` 必须通过服务器的 HTTP 头设置，meta 标签不会生效。下面添加 `form-action 'self'` 作为客户端临时缓解。 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; img-src 'self' data:; form-action 'self';">
+    <!-- 本地开发时移除严格的 CSP 元标签，以避免阻止内联脚本和调试工具。部署前请在服务器端通过 HTTP 头安全配置 CSP。 -->
+    <!-- 已移除 meta Content-Security-Policy 以便本地调试 -->
     <title>云上笔记 - 随心记录，云端相伴</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 💡 使用官方 Supabase JS SDK，确保认证流程与重定向兼容 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"
-            integrity="sha384-256132bc787e9517f4b0dfd6598f904d0c17f82c96aa6360e2d91cf0643300c12d476c0636b08996f9eed651c3d640e6"
-            crossorigin="anonymous"></script>
+    <!-- 使用本地提供的 supabase.js，避免 CDN integrity 校验失败导致脚本未加载 -->
+    <script src="supabase.js"></script>
 </head>
 <body>
     <!-- 顶部导航栏 -->
@@ -90,5 +88,6 @@
     </div>
 
     <script src="script.js"></script>
+    <!-- 调试栏已移除 -->
 </body>
 </html>

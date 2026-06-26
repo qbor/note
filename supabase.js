@@ -19,6 +19,11 @@
                     if (!token) return { data: { user: null }, error: null };
                     try {
                         var res = await fetch(supabaseUrl + '/auth/v1/user', { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + token } });
+                        if (res.status === 403) {
+                            // token 无效或被拒绝，清理并返回 signed out
+                            try { localStorage.removeItem('sb_real_token'); } catch (e) { }
+                            return { data: { user: null }, error: { status: 403, message: 'Forbidden - token removed' } };
+                        }
                         var data = await res.json();
                         if (res.ok) return { data: { user: data }, error: null };
                         return { data: { user: null }, error: data };
@@ -31,9 +36,14 @@
                         if (token) {
                             try {
                                 var res = await fetch(supabaseUrl + '/auth/v1/user', { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + token } });
-                                var data = await res.json();
-                                if (res.ok) callback('SIGNED_IN', { user: data });
-                                else callback('SIGNED_OUT', null);
+                                if (res.status === 403) {
+                                    try { localStorage.removeItem('sb_real_token'); } catch (e) { }
+                                    callback('SIGNED_OUT', null);
+                                } else {
+                                    var data = await res.json();
+                                    if (res.ok) callback('SIGNED_IN', { user: data });
+                                    else callback('SIGNED_OUT', null);
+                                }
                             } catch (e) { callback('SIGNED_OUT', null); }
                         } else { callback('SIGNED_OUT', null); }
                     }, 50);

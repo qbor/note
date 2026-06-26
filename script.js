@@ -32,6 +32,8 @@ const generatedTitleInput = document.getElementById('generated-title-input');
 const confirmTitleBtn = document.getElementById('confirm-title-btn');
 const cancelTitleBtn = document.getElementById('cancel-title-btn');
 
+const closeModalBtn = document.getElementById('close-modal');
+
 const authModal = document.getElementById('auth-modal');
 const emailInput = document.getElementById('auth-input-email');
 const passwordInput = document.getElementById('auth-input-password');
@@ -49,43 +51,56 @@ let authMode = 'login';
 // 3. 系统初始化与事件绑定
 // ==========================================
 async function init() {
-    console.log('初始化 Supabase auth 监听');
+    // 初始化完成，开始绑定事件（调试日志已移除）
+    function safeAdd(el, evt, handler) {
+        if (el && typeof el.addEventListener === 'function') {
+            el.addEventListener(evt, handler);
+        } else {
+            console.warn(`缺少 DOM 元素或无法绑定事件：${evt}`);
+        }
+    }
+
+    if (!mySupabase) {
+        console.warn('Supabase 客户端不可用，禁用所有需要网络的交互。');
+        safeAdd(authBtn, 'click', () => { alert('Supabase 未初始化，无法进行登录。'); });
+        safeAdd(newNoteBtn, 'click', () => { alert('未登录或 Supabase 未初始化，无法新建笔记。'); });
+        return;
+    }
+
     mySupabase.auth.onAuthStateChange((event, session) => {
-        console.log('Supabase auth 状态变化', event, session);
         handleUserStatus(session?.user || null);
     });
 
-    authBtn.addEventListener('click', async () => {
+    safeAdd(authBtn, 'click', async () => {
         if (currentUser) {
             await mySupabase.auth.signOut();
-            window.location.reload(); 
+            window.location.reload();
         } else {
             showAuthModal('login');
         }
     });
 
-    deleteAccountBtn.addEventListener('click', handleDeleteAccount);
-    document.getElementById('close-modal').addEventListener('click', hideAuthModal);
-    loginModeBtn.addEventListener('click', () => setAuthMode('login'));
-    registerModeBtn.addEventListener('click', () => setAuthMode('register'));
-    submitAuthBtn.addEventListener('click', handleSubmitAuth);
-    authModal.addEventListener('click', (event) => {
-        if (event.target === authModal) hideAuthModal();
-    });
-    authModal.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            handleSubmitAuth();
-        }
-    });
-    deleteNoteBtn.addEventListener('click', deleteCurrentNote);
-    generateTitleBtn.addEventListener('click', generateTitleFromContent);
-    confirmTitleBtn.addEventListener('click', confirmGeneratedTitle);
-    cancelTitleBtn.addEventListener('click', () => hideTitleConfirmModal());
+    safeAdd(deleteAccountBtn, 'click', handleDeleteAccount);
+    safeAdd(closeModalBtn, 'click', hideAuthModal);
+    safeAdd(loginModeBtn, 'click', () => setAuthMode('login'));
+    safeAdd(registerModeBtn, 'click', () => setAuthMode('register'));
+    safeAdd(submitAuthBtn, 'click', handleSubmitAuth);
+
+    if (authModal) {
+        authModal.addEventListener('click', (event) => { if (event.target === authModal) hideAuthModal(); });
+        authModal.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); handleSubmitAuth(); } });
+    } else {
+        console.warn('未找到 authModal，无法监听模态框事件');
+    }
+
+    safeAdd(deleteNoteBtn, 'click', deleteCurrentNote);
+    safeAdd(generateTitleBtn, 'click', generateTitleFromContent);
+    safeAdd(confirmTitleBtn, 'click', confirmGeneratedTitle);
+    safeAdd(cancelTitleBtn, 'click', () => hideTitleConfirmModal());
     
-    newNoteBtn.addEventListener('click', createNewNote);
-    noteTitle.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
-    noteContent.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
+    safeAdd(newNoteBtn, 'click', createNewNote);
+    if (noteTitle) noteTitle.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
+    if (noteContent) noteContent.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
 
     const initialUser = await getCurrentUser();
     handleUserStatus(initialUser);
@@ -94,48 +109,52 @@ async function init() {
 function setAuthMode(mode) {
     authMode = mode;
     const isLogin = mode === 'login';
-    modalTitle.innerText = isLogin ? '账户登录' : '创建账号';
-    submitAuthBtn.innerText = isLogin ? '登录' : '注册';
-    loginModeBtn.classList.toggle('btn-primary', isLogin);
-    loginModeBtn.classList.toggle('btn-secondary', !isLogin);
-    registerModeBtn.classList.toggle('btn-primary', !isLogin);
-    registerModeBtn.classList.toggle('btn-secondary', isLogin);
-    redirectOptionContainer.style.display = isLogin ? 'none' : 'block';
+    if (modalTitle) modalTitle.innerText = isLogin ? '账户登录' : '创建账号';
+    if (submitAuthBtn) submitAuthBtn.innerText = isLogin ? '登录' : '注册';
+    if (loginModeBtn) {
+        loginModeBtn.classList.toggle('btn-primary', isLogin);
+        loginModeBtn.classList.toggle('btn-secondary', !isLogin);
+    }
+    if (registerModeBtn) {
+        registerModeBtn.classList.toggle('btn-primary', !isLogin);
+        registerModeBtn.classList.toggle('btn-secondary', isLogin);
+    }
+    if (redirectOptionContainer) redirectOptionContainer.style.display = isLogin ? 'none' : 'block';
     clearAuthError();
 }
 
 function showAuthModal(mode = 'login') {
     setAuthMode(mode);
-    authModal.classList.remove('hidden');
+    if (authModal) authModal.classList.remove('hidden');
     clearAuthInputs();
     clearAuthError();
-    emailInput.focus();
+    if (emailInput && typeof emailInput.focus === 'function') emailInput.focus();
 }
 
 function hideAuthModal() {
-    authModal.classList.add('hidden');
+    if (authModal) authModal.classList.add('hidden');
     clearAuthInputs();
     clearAuthError();
 }
 
 function clearAuthInputs() {
-    emailInput.value = '';
-    passwordInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (passwordInput) passwordInput.value = '';
 }
 
 function clearAuthError() {
-    authError.innerText = '';
+    if (authError) authError.innerText = '';
 }
 
 function showAuthError(message) {
-    authError.innerText = message;
-    saveStatus.innerText = authMode === 'login' ? '登录失败' : '注册失败';
+    if (authError) authError.innerText = message;
+    if (saveStatus) saveStatus.innerText = authMode === 'login' ? '登录失败' : '注册失败';
 }
 
 function setAuthButtonsEnabled(enabled) {
-    submitAuthBtn.disabled = !enabled;
-    loginModeBtn.disabled = !enabled;
-    registerModeBtn.disabled = !enabled;
+    if (submitAuthBtn) submitAuthBtn.disabled = !enabled;
+    if (loginModeBtn) loginModeBtn.disabled = !enabled;
+    if (registerModeBtn) registerModeBtn.disabled = !enabled;
 }
 
 // ==========================================
