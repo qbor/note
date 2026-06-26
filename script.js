@@ -23,6 +23,7 @@ const noteContent = document.getElementById('note-content');
 const newNoteBtn = document.getElementById('new-note-btn');
 const saveStatus = document.getElementById('save-status');
 const authBtn = document.getElementById('auth-btn');
+const deleteAccountBtn = document.getElementById('delete-account-btn');
 const userEmailSpan = document.getElementById('user-email');
 const deleteNoteBtn = document.getElementById('delete-note-btn');
 const generateTitleBtn = document.getElementById('generate-title-btn');
@@ -63,6 +64,7 @@ async function init() {
         }
     });
 
+    deleteAccountBtn.addEventListener('click', handleDeleteAccount);
     document.getElementById('close-modal').addEventListener('click', hideAuthModal);
     loginModeBtn.addEventListener('click', () => setAuthMode('login'));
     registerModeBtn.addEventListener('click', () => setAuthMode('register'));
@@ -147,11 +149,13 @@ function handleUserStatus(user) {
         const realEmail = user.email || (user.user_metadata && user.user_metadata.email) || "已登录用户";
         userEmailSpan.innerText = realEmail;
         authBtn.innerText = '退出登录';
+        deleteAccountBtn.classList.remove('hidden');
         newNoteBtn.disabled = false;
         fetchNotesFromCloud();
     } else {
         userEmailSpan.innerText = '';
         authBtn.innerText = '登录 / 注册';
+        deleteAccountBtn.classList.add('hidden');
         newNoteBtn.disabled = true;
         noteTitle.disabled = true;
         noteContent.disabled = true;
@@ -167,6 +171,58 @@ async function getCurrentUser() {
     const { data, error } = await mySupabase.auth.getUser();
     if (error) return null;
     return data?.user ?? null;
+}
+
+function getAccessToken() {
+    return localStorage.getItem('sb_real_token');
+}
+
+async function handleDeleteAccount() {
+    if (!currentUser) return;
+    if (!confirm('确定要注销当前账户吗？此操作不可撤销，所有笔记和账户信息将永久删除。')) return;
+
+    deleteAccountBtn.disabled = true;
+    authBtn.disabled = true;
+    saveStatus.innerText = '正在注销账户...';
+
+    const token = getAccessToken();
+    if (!token) {
+        alert('未检测到有效登录凭证，请先重新登录后再试。');
+        deleteAccountBtn.disabled = false;
+        authBtn.disabled = false;
+        saveStatus.innerText = '注销失败';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+            method: 'DELETE',
+            headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData?.msg || errorData?.error || response.statusText || '账户注销失败';
+            alert(`注销失败：${errorMessage}`);
+            saveStatus.innerText = '注销失败';
+            deleteAccountBtn.disabled = false;
+            authBtn.disabled = false;
+            return;
+        }
+
+        await mySupabase.auth.signOut();
+        saveStatus.innerText = '账户已注销';
+        window.location.reload();
+    } catch (e) {
+        alert('注销账户时发生错误，请稍后重试。');
+        saveStatus.innerText = '注销失败';
+        deleteAccountBtn.disabled = false;
+        authBtn.disabled = false;
+    }
 }
 
 function getEmailRedirectUrl() {

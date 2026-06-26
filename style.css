@@ -297,6 +297,10 @@ header {
     align-items: center;
     z-index: 999;
 }
+.hidden {
+    display: none !important;
+}
+
 .modal.hidden {
     display: none !important;
 }
