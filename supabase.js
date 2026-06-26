@@ -40,7 +40,11 @@
                 },
                 signUp: async function (creds) {
                     try {
-                        var res = await fetch(supabaseUrl + '/auth/v1/signup', { method: 'POST', headers: headers, body: JSON.stringify({ email: creds.email, password: creds.password }) });
+                        var body = { email: creds.email, password: creds.password };
+                        if (creds.options && creds.options.emailRedirectTo) {
+                            body.redirect_to = creds.options.emailRedirectTo;
+                        }
+                        var res = await fetch(supabaseUrl + '/auth/v1/signup', { method: 'POST', headers: headers, body: JSON.stringify(body) });
                         var data = await res.json();
                         if (!res.ok) return { data: null, error: data };
                         return { data: data, error: null };

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; img-src 'self' data:;">
     <title>云上笔记 - 随心记录，云端相伴</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 💡 核心：抛弃本地错乱的文件，直接引入官方最稳定的云端网络引擎 -->
-    <script src="supabase.js"></script>
+    <!-- 💡 使用官方 Supabase JS SDK，确保认证流程与重定向兼容 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 </head>
 <body>
     <!-- 顶部导航栏 -->
@@ -60,6 +60,12 @@
             <div id="auth-error" class="auth-error"></div>
             <input type="email" id="auth-input-email" placeholder="请输入邮箱">
             <input type="password" id="auth-input-password" placeholder="请输入密码">
+            <div id="redirect-option-container" class="auth-redirect-option">
+                <label>
+                    <input type="checkbox" id="auth-redirect-checkbox" checked>
+                    邮箱确认后跳回我的网站
+                </label>
+            </div>
             <div class="modal-buttons">
                 <button id="submit-auth" class="btn-primary">登录</button>
                 <button id="close-modal" class="btn-text">取消</button>

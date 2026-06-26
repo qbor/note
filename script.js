@@ -2,7 +2,11 @@
 // 1. 核心云端配置区域
 // ==========================================
 const SUPABASE_URL = 'https://fcfnxmptiffipykvemuj.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZm54bXB0aWZmaXB5a3ZlbXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzNTMwNTksImV4cCI6MjA5NzkyOTA1OX0.fl-ajaZJeM-OdWdivAO7JiWnboYjhjHL9Km5-POwhO8';
+const SUPABASE_KEY = 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
+
+// 如果你希望邮箱确认后跳转到你的 GitHub 网站，请在这里填写完整地址。
+// 注意：该 URL 必须在 Supabase 项目 Auth 重定向 URL 中允许。
+const EMAIL_CONFIRM_REDIRECT = 'https://qbor.github.io/note/';
 
 const mySupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -30,6 +34,8 @@ const cancelTitleBtn = document.getElementById('cancel-title-btn');
 const authModal = document.getElementById('auth-modal');
 const emailInput = document.getElementById('auth-input-email');
 const passwordInput = document.getElementById('auth-input-password');
+const redirectOptionContainer = document.getElementById('redirect-option-container');
+const redirectCheckbox = document.getElementById('auth-redirect-checkbox');
 const modalTitle = document.getElementById('modal-title');
 const authError = document.getElementById('auth-error');
 const loginModeBtn = document.getElementById('login-mode-btn');
@@ -42,7 +48,9 @@ let authMode = 'login';
 // 3. 系统初始化与事件绑定
 // ==========================================
 async function init() {
+    console.log('初始化 Supabase auth 监听');
     mySupabase.auth.onAuthStateChange((event, session) => {
+        console.log('Supabase auth 状态变化', event, session);
         handleUserStatus(session?.user || null);
     });
 
@@ -90,6 +98,7 @@ function setAuthMode(mode) {
     loginModeBtn.classList.toggle('btn-secondary', !isLogin);
     registerModeBtn.classList.toggle('btn-primary', !isLogin);
     registerModeBtn.classList.toggle('btn-secondary', isLogin);
+    redirectOptionContainer.style.display = isLogin ? 'none' : 'block';
     clearAuthError();
 }
 
@@ -160,6 +169,19 @@ async function getCurrentUser() {
     return data?.user ?? null;
 }
 
+function getEmailRedirectUrl() {
+    if (!redirectCheckbox.checked) {
+        return null;
+    }
+    if (EMAIL_CONFIRM_REDIRECT) {
+        return EMAIL_CONFIRM_REDIRECT;
+    }
+    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        return window.location.origin;
+    }
+    return null;
+}
+
 // ==========================================
 // 5. 注册与登录
 // ==========================================
@@ -171,11 +193,29 @@ async function handleRegister() {
     saveStatus.innerText = '正在提交注册...';
     setAuthButtonsEnabled(false);
 
-    const { data, error } = await mySupabase.auth.signUp({ email: emailInput.value, password: passwordInput.value });
+    const redirectUrl = getEmailRedirectUrl();
+    const signUpParams = {
+        email: emailInput.value,
+        password: passwordInput.value
+    };
+    if (redirectUrl) {
+        signUpParams.options = { emailRedirectTo: redirectUrl };
+    }
+
+    const { data, error } = await mySupabase.auth.signUp(signUpParams);
     if (error) {
         const errorMsg = error.message || error.msg || error.error_description || JSON.stringify(error);
         showAuthError('注册失败：' + errorMsg);
         return setAuthButtonsEnabled(true);
+    }
+
+    const emailConfirmed = data?.user?.email_confirmed_at || data?.user?.confirmed_at;
+    if (!emailConfirmed) {
+        saveStatus.innerText = '已发送验证邮件，请前往邮箱完成认证';
+        authError.innerText = '注册成功，请打开邮箱点击确认链接后再登录。';
+        hideAuthModal();
+        setAuthButtonsEnabled(true);
+        return;
     }
 
     saveStatus.innerText = '注册成功，正在自动登录...';
