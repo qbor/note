@@ -2,7 +2,9 @@
 // 1. 核心云端配置区域
 // ==========================================
 const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
-const SUPABASE_URL = SUPABASE_CONFIG.url || (typeof window !== 'undefined' ? window.location.origin + '/supabase-api' : '');
+const SUPABASE_URL = (typeof window !== 'undefined' && window.location?.origin)
+    ? `${window.location.origin}/supabase-api`
+    : (SUPABASE_CONFIG.url || '');
 const SUPABASE_KEY = SUPABASE_CONFIG.key || 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
 const DEFAULT_SITE_URL = (typeof window !== 'undefined' && window.location?.origin)
     ? window.location.origin
