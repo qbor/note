@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 本地开发时移除严格的 CSP 元标签，以避免阻止内联脚本和调试工具。部署前请在服务器端通过 HTTP 头安全配置 CSP。 -->
-    <!-- 已移除 meta Content-Security-Policy 以便本地调试 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+    <!-- 已恢复严格 CSP，部署时建议使用服务器端 HTTP 头而不是仅依赖 meta 标签 -->
     <title>云上笔记 - 随心记录，云端相伴</title>
     <link rel="stylesheet" href="style.css">
     <!-- 使用本地提供的 supabase.js，避免 CDN integrity 校验失败导致脚本未加载 -->

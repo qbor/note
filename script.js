@@ -6,7 +6,10 @@ const SUPABASE_KEY = 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
 
 // 如果你希望邮箱确认后跳转到你的 GitHub 网站，请在这里填写完整地址。
 // 注意：该 URL 必须在 Supabase 项目 Auth 重定向 URL 中允许。
-const EMAIL_CONFIRM_REDIRECT = 'https://qbor.github.io/note/';
+// 推荐使用当前页面地址，避免写死到错误的 GitHub Pages 路径。
+const EMAIL_CONFIRM_REDIRECT = window.location.protocol.startsWith('http')
+    ? window.location.origin + window.location.pathname.replace(/index\.html$/, '')
+    : '';
 
 const mySupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -193,7 +196,7 @@ async function getCurrentUser() {
 }
 
 function getAccessToken() {
-    return localStorage.getItem('sb_real_token');
+    return localStorage.getItem('sb_real_token') || localStorage.getItem('sb-access-token');
 }
 
 async function handleDeleteAccount() {
@@ -207,6 +210,17 @@ async function handleDeleteAccount() {
     const token = getAccessToken();
     if (!token) {
         alert('未检测到有效登录凭证，请先重新登录后再试。');
+        await mySupabase.auth.signOut();
+        deleteAccountBtn.disabled = false;
+        authBtn.disabled = false;
+        saveStatus.innerText = '注销失败';
+        return;
+    }
+
+    const { data: userData, error: userError } = await mySupabase.auth.getUser();
+    if (userError || !userData) {
+        alert('当前登录凭证已失效，请重新登录后再尝试注销账户。');
+        await mySupabase.auth.signOut();
         deleteAccountBtn.disabled = false;
         authBtn.disabled = false;
         saveStatus.innerText = '注销失败';
