@@ -1,11 +1,11 @@
 {
   "headers": [
     {
-      "source": "(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co; img-src 'self' data:; form-action 'self' https://fcfnxmptiffipykvemuj.supabase.co; frame-ancestors 'none';"
+          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://fcfnxmptiffipykvemuj.supabase.co https://cdn.jsdelivr.net; form-action 'self' https://fcfnxmptiffipykvemuj.supabase.co; frame-ancestors 'self';"
         }
       ]
     }
