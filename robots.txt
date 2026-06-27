@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /secret-page.html
+Disallow: /admin/
+Disallow: /test/
