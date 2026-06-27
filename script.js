@@ -51,6 +51,8 @@ const deleteAccountBtn = document.getElementById('delete-account-btn');
 const userEmailSpan = document.getElementById('user-email');
 const deleteNoteBtn = document.getElementById('delete-note-btn');
 const generateTitleBtn = document.getElementById('generate-title-btn');
+const goToSecretBtn = document.getElementById('goToSecretBtn');
+const noteListToggleBtn = document.getElementById('noteListToggleBtn');
 const titleConfirmModal = document.getElementById('title-confirm-modal');
 const generatedTitleInput = document.getElementById('generated-title-input');
 const confirmTitleBtn = document.getElementById('confirm-title-btn');
@@ -70,6 +72,20 @@ const registerModeBtn = document.getElementById('register-mode-btn');
 const submitAuthBtn = document.getElementById('submit-auth');
 
 let authMode = 'login';
+let noteListCollapsed = false;
+
+function setNoteListCollapsed(collapsed) {
+    noteListCollapsed = collapsed;
+    if (notesList) notesList.classList.toggle('collapsed', collapsed);
+    if (noteListToggleBtn) {
+        noteListToggleBtn.textContent = collapsed ? '展开' : '收起';
+        noteListToggleBtn.setAttribute('aria-expanded', String(!collapsed));
+    }
+}
+
+function toggleNoteList() {
+    setNoteListCollapsed(!noteListCollapsed);
+}
 
 // ==========================================
 // 3. 系统初始化与事件绑定
@@ -88,6 +104,8 @@ async function init() {
         console.warn('Supabase 客户端不可用，禁用所有需要网络的交互。');
         safeAdd(authBtn, 'click', () => { alert('Supabase 未初始化，无法进行登录。'); });
         safeAdd(newNoteBtn, 'click', () => { alert('未登录或 Supabase 未初始化，无法新建笔记。'); });
+        safeAdd(goToSecretBtn, 'click', () => { alert('请先登录后再访问私密空间。'); });
+        safeAdd(noteListToggleBtn, 'click', () => { alert('请先登录后再访问笔记列表。'); });
         return;
     }
 
@@ -103,6 +121,7 @@ async function init() {
             showAuthModal('login');
         }
     });
+    safeAdd(noteListToggleBtn, 'click', toggleNoteList);
 
     safeAdd(deleteAccountBtn, 'click', handleDeleteAccount);
     safeAdd(closeModalBtn, 'click', hideAuthModal);
@@ -194,12 +213,16 @@ function handleUserStatus(user) {
         authBtn.innerText = '退出登录';
         deleteAccountBtn.classList.remove('hidden');
         newNoteBtn.disabled = false;
+        goToSecretBtn.disabled = false;
+        if (noteListToggleBtn) noteListToggleBtn.disabled = false;
         fetchNotesFromCloud();
     } else {
         userEmailSpan.innerText = '';
         authBtn.innerText = '登录 / 注册';
         deleteAccountBtn.classList.add('hidden');
         newNoteBtn.disabled = true;
+        goToSecretBtn.disabled = true;
+        if (noteListToggleBtn) noteListToggleBtn.disabled = true;
         noteTitle.disabled = true;
         noteContent.disabled = true;
         deleteNoteBtn.disabled = true;
@@ -401,7 +424,9 @@ async function fetchNotesFromCloud() {
 }
 
 function renderNotesList() {
+    if (!notesList) return;
     notesList.innerHTML = '';
+
     if (notes.length === 0) {
         const placeholder = document.createElement('div');
         placeholder.classList.add('placeholder-text');
@@ -420,7 +445,15 @@ function renderNotesList() {
         titleDiv.textContent = note.title || '无标题笔记';
 
         div.appendChild(titleDiv);
-        div.addEventListener('click', () => { activeNoteId = note.id; renderNotesList(); loadActiveNote(); });
+        div.addEventListener('click', () => {
+            if (!currentUser) {
+                alert('请先登录后再查看笔记');
+                return;
+            }
+            activeNoteId = note.id;
+            renderNotesList();
+            loadActiveNote();
+        });
         notesList.appendChild(div);
     });
 }
@@ -434,10 +467,12 @@ function loadActiveNote() {
         noteTitle.disabled = false;
         noteContent.disabled = false;
         deleteNoteBtn.disabled = false;
+        generateTitleBtn.disabled = false;
     } else {
         noteTitle.value = ''; noteContent.value = '';
         noteTitle.disabled = true; noteContent.disabled = true;
         deleteNoteBtn.disabled = true;
+        generateTitleBtn.disabled = true;
     }
 }
 
@@ -445,7 +480,11 @@ function loadActiveNote() {
 // 7. 云端新建、更新、删除逻辑
 // ==========================================
 async function createNewNote() {
-    // 💡 解决连击隐患：点击瞬间立刻禁用按钮，并显示 loading 状态文案
+    if (!currentUser) {
+        saveStatus.innerText = '请先登录后再创建笔记';
+        return;
+    }
+
     newNoteBtn.disabled = true;
     saveStatus.innerText = '正在创建新笔记...';
 
@@ -459,13 +498,12 @@ async function createNewNote() {
         renderNotesList();
         loadActiveNote();
     } else {
-        alert('新建笔记失败，请确认您的 Supabase 后台 notes 表配置正确，并且您已登录。');
+        saveStatus.innerText = '新建笔记失败，请确认 Supabase 已登录并且 notes 表配置正常。';
     }
     if (createdNote) {
         noteTitle.focus();
     }
     
-    // 💡 异步请求结束后，重新恢复新建按钮的可用状态
     newNoteBtn.disabled = false;
 }
 
@@ -587,3 +625,11 @@ if (document.readyState === 'loading') {
 } else {
     startApp();
 }
+
+// 监听按钮点击，跳转到私密页
+//const goToSecretBtn = document.getElementById('goToSecretBtn');
+//if (goToSecretBtn) {
+  //  goToSecretBtn.addEventListener('click', () => {
+   //     window.location.href = 'secret_page.html';
+    //});
+//}

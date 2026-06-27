@@ -35,6 +35,7 @@
             </div>
             <div class="user-auth-zone">
                 <span id="user-email" class="user-email"></span>
+                <button id="goToSecretBtn_secret" class="btn-nav">进入私密空间 🔒</button>
                 <button id="auth-btn" class="btn-secondary">登录 / 注册</button>
                 <button id="delete-account-btn" class="btn-danger hidden">注销账户</button>
             </div>
@@ -44,13 +45,25 @@
     <!-- 主体内容区 -->
     <main class="main-container">
         <section class="sidebar">
-            <button id="new-note-btn" class="btn-primary" disabled>+ 新建笔记</button>
+            <div class="sidebar-actions">
+                <button id="new-note-btn" class="btn-primary" disabled>+ 新建笔记</button>
+            </div>
+            <div class="sidebar-header">
+                <h2>笔记列表</h2>
+                <button id="noteListToggleBtn" class="btn-nav" aria-expanded="true">收起</button>
+            </div>
             <div id="notes-list" class="notes-list">
                 <div class="placeholder-text">请先登录以同步云端笔记</div>
             </div>
         </section>
 
         <section class="editor-area">
+            <div class="editor-header">
+                <div class="editor-title-group">
+                    <h2>笔记编辑</h2>
+                    <p class="editor-hint">登录后可在此查看、编辑并保存云端笔记。</p>
+                </div>
+            </div>
             <input type="text" id="note-title" placeholder="无标题笔记" class="input-title" disabled>
             <textarea id="note-content" placeholder="开始在云端记录你的想法..." class="textarea-content" disabled></textarea>
             <div class="editor-footer">
