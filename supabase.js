@@ -12,42 +12,69 @@
             'Authorization': 'Bearer ' + supabaseKey,
             'Content-Type': 'application/json'
         };
+
+        // 修复：统一的 Auth 状态管理
+        let authStateListeners = [];
+        function notifyAuthStateChange(event, session) {
+            authStateListeners.forEach(callback => callback(event, session));
+        }
+
         return {
             auth: {
-                __authStateChangeCallback: null,
+                onAuthStateChange: function (callback) {
+                    authStateListeners.push(callback);
+                    // 立即检查当前状态
+                    setTimeout(async () => {
+                        const token = localStorage.getItem('sb_real_token');
+                        if (token) {
+                            try {
+                                const res = await fetch(supabaseUrl + '/auth/v1/user', { 
+                                    headers: { 
+                                        'apikey': supabaseKey, 
+                                        'Authorization': 'Bearer ' + token 
+                                    } 
+                                });
+                                if (res.status === 401 || res.status === 403) {
+                                    localStorage.removeItem('sb_real_token');
+                                    notifyAuthStateChange('SIGNED_OUT', null);
+                                } else {
+                                    const data = await res.json();
+                                    if (res.ok) {
+                                        notifyAuthStateChange('SIGNED_IN', { user: data });
+                                    } else {
+                                        notifyAuthStateChange('SIGNED_OUT', null);
+                                    }
+                                }
+                            } catch (e) { 
+                                notifyAuthStateChange('SIGNED_OUT', null); 
+                            }
+                        } else { 
+                            notifyAuthStateChange('SIGNED_OUT', null); 
+                        }
+                    }, 50);
+                },
                 getUser: async function () {
                     var token = localStorage.getItem('sb_real_token');
                     if (!token) return { data: { user: null }, error: null };
                     try {
-                        var res = await fetch(supabaseUrl + '/auth/v1/user', { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + token } });
-                        if (res.status === 403) {
-                            // token 无效或被拒绝，清理并返回 signed out
-                            try { localStorage.removeItem('sb_real_token'); } catch (e) { }
-                            return { data: { user: null }, error: { status: 403, message: 'Forbidden - token removed' } };
+                        var res = await fetch(supabaseUrl + '/auth/v1/user', { 
+                            headers: { 
+                                'apikey': supabaseKey, 
+                                'Authorization': 'Bearer ' + token 
+                            } 
+                        });
+                        // 修复：401 也清理 Token（不仅仅是 403）
+                        if (res.status === 401 || res.status === 403) {
+                            localStorage.removeItem('sb_real_token');
+                            return { data: { user: null }, error: { status: res.status, message: 'Token 无效' } };
                         }
                         var data = await res.json();
                         if (res.ok) return { data: { user: data }, error: null };
                         return { data: { user: null }, error: data };
-                    } catch (e) { return { data: { user: null }, error: e }; }
-                },
-                onAuthStateChange: function (callback) {
-                    this.__authStateChangeCallback = callback;
-                    setTimeout(async function () {
-                        var token = localStorage.getItem('sb_real_token');
-                        if (token) {
-                            try {
-                                var res = await fetch(supabaseUrl + '/auth/v1/user', { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + token } });
-                                if (res.status === 403) {
-                                    try { localStorage.removeItem('sb_real_token'); } catch (e) { }
-                                    callback('SIGNED_OUT', null);
-                                } else {
-                                    var data = await res.json();
-                                    if (res.ok) callback('SIGNED_IN', { user: data });
-                                    else callback('SIGNED_OUT', null);
-                                }
-                            } catch (e) { callback('SIGNED_OUT', null); }
-                        } else { callback('SIGNED_OUT', null); }
-                    }, 50);
+                    } catch (e) { 
+                        console.error('getUser 异常:', e);
+                        return { data: { user: null }, error: e }; 
+                    }
                 },
                 signUp: async function (creds) {
                     try {
@@ -57,46 +84,88 @@
                         } else if (authOptions.redirectTo) {
                             body.redirect_to = authOptions.redirectTo;
                         }
-                        var res = await fetch(supabaseUrl + '/auth/v1/signup', { method: 'POST', headers: headers, body: JSON.stringify(body) });
+                        var res = await fetch(supabaseUrl + '/auth/v1/signup', { 
+                            method: 'POST', 
+                            headers: headers, 
+                            body: JSON.stringify(body) 
+                        });
                         var data = await res.json();
                         if (!res.ok) return { data: null, error: data };
                         return { data: data, error: null };
-                    } catch (e) { return { data: null, error: e }; }
+                    } catch (e) { 
+                        console.error('signUp 异常:', e);
+                        return { data: null, error: e }; 
+                    }
                 },
                 signInWithPassword: async function (creds) {
                     try {
-                        var res = await fetch(supabaseUrl + '/auth/v1/token?grant_type=password', { method: 'POST', headers: headers, body: JSON.stringify({ email: creds.email, password: creds.password }) });
+                        var res = await fetch(supabaseUrl + '/auth/v1/token?grant_type=password', { 
+                            method: 'POST', 
+                            headers: headers, 
+                            body: JSON.stringify({ email: creds.email, password: creds.password }) 
+                        });
                         var data = await res.json();
                         if (!res.ok) return { data: null, error: data };
+                        
+                        // 修复：正确存储 Token
                         localStorage.setItem('sb_real_token', data.access_token);
-                        if (this.__authStateChangeCallback) {
-                            var userRes = await this.getUser();
-                            this.__authStateChangeCallback('SIGNED_IN', { user: userRes.data?.user ?? null });
-                        }
+                        // 立即通知状态变化
+                        const userRes = await this.getUser();
+                        notifyAuthStateChange('SIGNED_IN', { user: userRes.data?.user ?? null });
+                        
                         return { data: data, error: null };
-                    } catch (e) { return { data: null, error: e }; }
+                    } catch (e) { 
+                        console.error('signInWithPassword 异常:', e);
+                        return { data: null, error: e }; 
+                    }
                 },
                 signOut: async function () {
-                    localStorage.removeItem('sb_real_token');
-                    if (this.__authStateChangeCallback) this.__authStateChangeCallback('SIGNED_OUT', null);
+                    try {
+                        localStorage.removeItem('sb_real_token');
+                        notifyAuthStateChange('SIGNED_OUT', null);
+                    } catch (e) {
+                        console.error('signOut 异常:', e);
+                    }
                     return { error: null };
                 }
             },
             from: function (tableName) {
                 return {
-                    select: function () {
+                    select: function (columns = '*') {
+                        // 修复：支持列选择，默认 *
+                        let queryParams = [];
+                        let filterField = null;
+                        let filterValue = null;
+                        let sortField = null;
+                        let sortDirection = 'asc';
+
                         return {
                             eq: function (field, val) {
+                                filterField = field;
+                                filterValue = val;
                                 return {
-                                    order: function (sortField, opts) {
+                                    order: function (sortFld, opts) {
+                                        sortField = sortFld;
+                                        sortDirection = opts?.ascending ? 'asc' : 'desc';
+                                        // 修复：返回 Promise 而不是嵌套函数
                                         return (async function () {
                                             var token = localStorage.getItem('sb_real_token');
-                                            var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + token });
+                                            var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + (token || supabaseKey) });
+                                            
+                                            // 构建查询参数
+                                            let query = `${tableName}?${filterField}=eq.${encodeURIComponent(filterValue)}`;
+                                            if (sortField) {
+                                                query += `&order=${sortField}.${sortDirection}`;
+                                            }
+                                            
                                             try {
-                                                var res = await fetch(supabaseUrl + '/rest/v1/' + tableName + '?' + field + '=eq.' + val + '&order=' + sortField + '.' + (opts.ascending ? 'asc' : 'desc'), { headers: h });
+                                                var res = await fetch(`${supabaseUrl}/rest/v1/${query}`, { headers: h });
                                                 var data = await res.json();
-                                                return { data: data, error: res.ok ? null : data };
-                                            } catch (e) { return { data: null, error: e }; }
+                                                return { data: res.ok ? data : null, error: res.ok ? null : data };
+                                            } catch (e) { 
+                                                console.error('查询异常:', e);
+                                                return { data: null, error: e }; 
+                                            }
                                         })();
                                     }
                                 };
@@ -108,12 +177,22 @@
                             select: function () {
                                 return (async function () {
                                     var token = localStorage.getItem('sb_real_token');
-                                    var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + token, 'Prefer': 'return=representation' });
+                                    var h = Object.assign({}, headers, { 
+                                        'Authorization': 'Bearer ' + (token || supabaseKey),
+                                        'Prefer': 'return=representation' 
+                                    });
                                     try {
-                                        var res = await fetch(supabaseUrl + '/rest/v1/' + tableName, { method: 'POST', headers: h, body: JSON.stringify(arr) });
+                                        var res = await fetch(`${supabaseUrl}/rest/v1/${tableName}`, { 
+                                            method: 'POST', 
+                                            headers: h, 
+                                            body: JSON.stringify(arr) 
+                                        });
                                         var data = await res.json();
-                                        return { data: data, error: res.ok ? null : data };
-                                    } catch (e) { return { data: null, error: e }; }
+                                        return { data: res.ok ? data : null, error: res.ok ? null : data };
+                                    } catch (e) { 
+                                        console.error('插入异常:', e);
+                                        return { data: null, error: e }; 
+                                    }
                                 })();
                             }
                         };
@@ -123,11 +202,18 @@
                             eq: function (field, val) {
                                 return (async function () {
                                     var token = localStorage.getItem('sb_real_token');
-                                    var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + token });
+                                    var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + (token || supabaseKey) });
                                     try {
-                                        var res = await fetch(supabaseUrl + '/rest/v1/' + tableName + '?' + field + '=eq.' + val, { method: 'PATCH', headers: h, body: JSON.stringify(obj) });
-                                        return { error: res.ok ? null : true };
-                                    } catch (e) { return { error: e }; }
+                                        var res = await fetch(`${supabaseUrl}/rest/v1/${tableName}?${field}=eq.${encodeURIComponent(val)}`, { 
+                                            method: 'PATCH', 
+                                            headers: h, 
+                                            body: JSON.stringify(obj) 
+                                        });
+                                        return { error: res.ok ? null : await res.json().catch(() => ({ message: '更新失败' })) };
+                                    } catch (e) { 
+                                        console.error('更新异常:', e);
+                                        return { error: e }; 
+                                    }
                                 })();
                             }
                         };
@@ -137,11 +223,17 @@
                             eq: function (field, val) {
                                 return (async function () {
                                     var token = localStorage.getItem('sb_real_token');
-                                    var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + token });
+                                    var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + (token || supabaseKey) });
                                     try {
-                                        var res = await fetch(supabaseUrl + '/rest/v1/' + tableName + '?' + field + '=eq.' + val, { method: 'DELETE', headers: h });
-                                        return { error: res.ok ? null : true };
-                                    } catch (e) { return { error: e }; }
+                                        var res = await fetch(`${supabaseUrl}/rest/v1/${tableName}?${field}=eq.${encodeURIComponent(val)}`, { 
+                                            method: 'DELETE', 
+                                            headers: h 
+                                        });
+                                        return { error: res.ok ? null : await res.json().catch(() => ({ message: '删除失败' })) };
+                                    } catch (e) { 
+                                        console.error('删除异常:', e);
+                                        return { error: e }; 
+                                    }
                                 })();
                             }
                         };

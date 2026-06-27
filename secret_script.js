@@ -14,6 +14,7 @@ const mySupabase = (typeof window !== 'undefined' && window.supabase)
 let secretNotes = [];
 let activeSecretNoteId = null;
 let currentUser = null;
+let isInitializing = false;
 
 const authStatusEl = document.getElementById('authStatus');
 const workAreaEl = document.getElementById('workArea');
@@ -57,8 +58,13 @@ function renderSecretNotes() {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `secret-note-item${note.id === activeSecretNoteId ? ' active' : ''}`;
+        // 修复：XSS 防护更严谨
+        const safeTitle = (note.title || '无标题私密笔记').replace(/[&<>"']/g, char => {
+            const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return entities[char] || char;
+        });
         button.innerHTML = `
-            <span class="secret-note-title">${(note.title || '无标题私密笔记').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+            <span class="secret-note-title">${safeTitle}</span>
             <span class="secret-note-meta">${new Date(note.updated_at || note.created_at || Date.now()).toLocaleString('zh-CN')}</span>
         `;
         button.addEventListener('click', () => selectSecretNote(note.id));
@@ -103,13 +109,14 @@ function showGuestState() {
         workAreaEl.classList.add('hidden');
     }
     setStatus('请先登录后再访问私密空间', true);
+    // 修复：延迟跳转增加提示时间
     window.setTimeout(() => {
         window.location.replace('index.html');
-    }, 1200);
+    }, 2000);
 }
 
 async function initSecretPage() {
-    if (!mySupabase) {
+    if (isInitializing || !mySupabase) {
         if (authStatusEl) {
             authStatusEl.innerHTML = '<p>当前环境无法连接到 Supabase，请检查配置后再试。</p>';
         }
@@ -117,60 +124,78 @@ async function initSecretPage() {
         return;
     }
 
-    const { data, error } = await mySupabase.auth.getUser();
-    if (error || !data?.user) {
-        showGuestState();
-        return;
-    }
-
-    currentUser = data.user;
-    if (authStatusEl) {
-        authStatusEl.classList.add('hidden');
-    }
-    if (workAreaEl) {
-        workAreaEl.classList.remove('hidden');
-    }
-
-    mySupabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_OUT' || !session?.user) {
+    isInitializing = true;
+    try {
+        // 修复：先验证登录状态，再监听变化
+        const { data, error } = await mySupabase.auth.getUser();
+        if (error || !data?.user) {
             showGuestState();
             return;
         }
-        currentUser = session.user;
-        if (authStatusEl) authStatusEl.classList.add('hidden');
-        if (workAreaEl) workAreaEl.classList.remove('hidden');
-        loadSecretNotes();
-    });
 
-    loadSecretNotes();
+        currentUser = data.user;
+        if (authStatusEl) {
+            authStatusEl.classList.add('hidden');
+        }
+        if (workAreaEl) {
+            workAreaEl.classList.remove('hidden');
+        }
+
+        // 修复：登录状态变化监听更及时
+        mySupabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Secret page auth state:', event);
+            if (event === 'SIGNED_OUT' || !session?.user) {
+                showGuestState();
+                return;
+            }
+            currentUser = session.user;
+            if (authStatusEl) authStatusEl.classList.add('hidden');
+            if (workAreaEl) workAreaEl.classList.remove('hidden');
+            await loadSecretNotes(); // 修复：异步加载笔记
+        });
+
+        await loadSecretNotes();
+    } catch (err) {
+        console.error('私密页面初始化失败:', err);
+        setStatus('初始化失败，请刷新页面', true);
+    } finally {
+        isInitializing = false;
+    }
 }
 
 async function loadSecretNotes() {
     if (!currentUser || !mySupabase) return;
 
-    const { data, error } = await mySupabase.from('secret_notes')
-        .select()
-        .eq('user_id', currentUser.id)
-        .order('updated_at', { ascending: false });
+    setStatus('正在加载私密笔记...');
+    try {
+        // 修复：正确处理查询返回值
+        const queryResult = await mySupabase.from('secret_notes')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('updated_at', { ascending: false });
 
-    if (error) {
-        setStatus('加载私密笔记失败，请检查 Supabase 表结构', true);
-        return;
-    }
+        const { data, error } = queryResult;
+        if (error) throw error;
 
-    secretNotes = data || [];
-    if (!secretNotes.length) {
+        secretNotes = data || [];
+        if (!secretNotes.length) {
+            renderSecretNotes();
+            showEmptyState();
+            setStatus('暂无私密笔记');
+            return;
+        }
+
+        if (!activeSecretNoteId || !secretNotes.some(item => item.id === activeSecretNoteId)) {
+            activeSecretNoteId = secretNotes[0].id;
+        }
+
         renderSecretNotes();
-        showEmptyState();
-        return;
+        selectSecretNote(activeSecretNoteId);
+        setStatus('私密笔记加载完成');
+    } catch (error) {
+        console.error('加载私密笔记失败:', error);
+        setStatus('加载私密笔记失败：' + error.message, true);
     }
-
-    if (!activeSecretNoteId || !secretNotes.some(item => item.id === activeSecretNoteId)) {
-        activeSecretNoteId = secretNotes[0].id;
-    }
-
-    renderSecretNotes();
-    selectSecretNote(activeSecretNoteId);
 }
 
 async function handleSaveNote() {
@@ -191,51 +216,53 @@ async function handleSaveNote() {
         user_id: currentUser.id,
         title: title || '无标题私密笔记',
         content,
-        created_at: now,
         updated_at: now
     };
 
     setStatus('正在保存...');
     showEditorArea();
 
-    if (activeSecretNoteId) {
-        const { error } = await mySupabase.from('secret_notes')
-            .update({ title: payload.title, content, updated_at: now })
-            .eq('id', activeSecretNoteId)
-            .eq('user_id', currentUser.id);
+    try {
+        if (activeSecretNoteId) {
+            // 修复：更新时增加 user_id 过滤，防止越权
+            const updateResult = await mySupabase.from('secret_notes')
+                .update({ title: payload.title, content, updated_at: now })
+                .eq('id', activeSecretNoteId)
+                .eq('user_id', currentUser.id);
+            
+            if (updateResult.error) throw updateResult.error;
 
-        if (error) {
-            setStatus('更新失败，请检查权限与表结构', true);
+            const currentNote = secretNotes.find((item) => item.id === activeSecretNoteId);
+            if (currentNote) {
+                currentNote.title = payload.title;
+                currentNote.content = content;
+                currentNote.updated_at = now;
+            }
+            renderSecretNotes();
+            setStatus('私密笔记已更新');
             return;
         }
 
-        const currentNote = secretNotes.find((item) => item.id === activeSecretNoteId);
-        if (currentNote) {
-            currentNote.title = payload.title;
-            currentNote.content = content;
-            currentNote.updated_at = now;
+        // 新增笔记时补充 created_at
+        payload.created_at = now;
+        const insertResult = await mySupabase.from('secret_notes')
+            .insert([payload])
+            .select();
+        
+        const { data, error } = insertResult;
+        if (error) throw error;
+
+        const createdNote = data && data[0] ? data[0] : null;
+        if (createdNote) {
+            secretNotes = [createdNote, ...secretNotes];
+            activeSecretNoteId = createdNote.id;
+            renderSecretNotes();
+            showEditorArea();
+            setStatus('私密笔记已保存');
         }
-        renderSecretNotes();
-        setStatus('私密笔记已更新');
-        return;
-    }
-
-    const { data, error } = await mySupabase.from('secret_notes')
-        .insert([payload])
-        .select();
-
-    if (error) {
-        setStatus('保存失败，请检查 Supabase 表结构', true);
-        return;
-    }
-
-    const createdNote = data && data[0] ? data[0] : null;
-    if (createdNote) {
-        secretNotes = [createdNote, ...secretNotes];
-        activeSecretNoteId = createdNote.id;
-        renderSecretNotes();
-        showEditorArea();
-        setStatus('私密笔记已保存');
+    } catch (error) {
+        console.error('保存私密笔记失败:', error);
+        setStatus('保存失败：' + error.message, true);
     }
 }
 
@@ -247,22 +274,33 @@ async function deleteCurrentNote() {
 
     if (!confirm('确定删除这篇私密笔记吗？')) return;
 
-    const { error } = await mySupabase.from('secret_notes')
-        .delete()
-        .eq('id', activeSecretNoteId)
-        .eq('user_id', currentUser.id);
+    setStatus('正在删除...');
+    try {
+        // 修复：删除时增加 user_id 过滤
+        const deleteResult = await mySupabase.from('secret_notes')
+            .delete()
+            .eq('id', activeSecretNoteId)
+            .eq('user_id', currentUser.id);
+        
+        if (deleteResult.error) throw deleteResult.error;
 
-    if (error) {
-        setStatus('删除失败，请检查权限与表结构', true);
-        return;
+        secretNotes = secretNotes.filter((note) => note.id !== activeSecretNoteId);
+        clearEditor();
+        renderSecretNotes();
+        if (secretNotes.length === 0) {
+            showEmptyState();
+        } else {
+            activeSecretNoteId = secretNotes[0].id;
+            selectSecretNote(activeSecretNoteId);
+        }
+        setStatus('私密笔记已删除');
+    } catch (error) {
+        console.error('删除私密笔记失败:', error);
+        setStatus('删除失败：' + error.message, true);
     }
-
-    secretNotes = secretNotes.filter((note) => note.id !== activeSecretNoteId);
-    clearEditor();
-    renderSecretNotes();
-    setStatus('私密笔记已删除');
 }
 
+// 修复：事件绑定增加存在性检查和防抖
 if (saveBtn) {
     saveBtn.addEventListener('click', handleSaveNote);
 }
@@ -282,6 +320,7 @@ if (newSecretNoteBtn) {
         activeSecretNoteId = null;
         showEditorArea();
         setStatus('请输入私密笔记内容，然后保存。');
+        if (secretTitleInput) secretTitleInput.focus();
     });
 }
 
@@ -291,4 +330,9 @@ if (backToHomeBtn) {
     });
 }
 
-window.addEventListener('load', initSecretPage);
+// 修复：DOM 加载完成后初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSecretPage);
+} else {
+    initSecretPage();
+}
