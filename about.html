@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于我们 - 云上笔记</title>
+    
+    <!-- 引入全站统一的样式表（包含导航栏样式） -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入关于我们的专属独立样式表 (拒绝内联) -->
+    <link rel="stylesheet" href="about_style.css">
+</head>
+<body>
+
+    <!-- 🌟 全局导航栏的空盒子，页面加载时 common.js 会自动把导航栏塞进这里 -->
+    <div id="global-navbar"></div>
+
+    <!-- 关于我们的核心内容大容器 -->
+    <div class="about-container">
+        <section class="about-hero">
+            <h1>关于云上笔记 ☁️</h1>
+            <p class="subtitle">让灵感在云端安全汇聚，记录你的每一个精彩瞬间。</p>
+        </section>
+
+        <section class="about-section">
+            <h3>我们的愿景</h3>
+            <p>我们致力于打造一款纯粹、高效、极度安全的在线笔记工具。无论是日常随笔、绝密工作空间，还是产品功能的创意爆发，云上笔记都能为你提供最稳固的技术支撑，让你的数据随时随地、多端顺畅流转。</p>
+        </section>
+
+        <section class="about-section">
+            <h3>多重安全防护机制</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>🔒 数据安全隔离</h4>
+                    <p>基于底层的严格内容安全策略（CSP）与行业标准防御体系，确保数据在传输与存储中绝不外泄。</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🛡️ 专属私密空间</h4>
+                    <p>内嵌搜索引擎双重阻断技术，为开发者和深度用户开辟完全隐形的独立沙箱工作台。</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🚀 现代化云端托管</h4>
+                    <p>由顶级云基础设施提供强力驱动，保障网站具备全天候不间断响应与无感部署的高性能表现。</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="about-footer">
+            <p>© 2026 云上笔记项目组. 保留所有权利。</p>
+        </footer>
+    </div>
+
+    <!-- 🌟 引入公共脚本：负责全自动拉取导航栏并实现当前页（关于我们）高亮 -->
+    <script src="common.js"></script>
+</body>
+</html>

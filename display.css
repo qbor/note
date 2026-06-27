@@ -1,0 +1,124 @@
+/* 功能展示页专属精致布局 */
+.display-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+    color: #2d3748;
+}
+
+.display-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.display-header h1 {
+    font-size: 32px;
+    color: #1a202c;
+    margin-bottom: 12px;
+}
+
+/* 四宫格现代功能卡片网格 */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 🌟 标准 2x2 两列布局 */
+    gap: 25px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 鼠标悬浮时卡片微微浮起并带有精致阴影 */
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e0;
+}
+
+.card-icon {
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+
+.card h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 18px;
+    color: #1a202c;
+}
+
+.card p {
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.display-footer {
+    text-align: center;
+    margin-top: 60px;
+    font-size: 14px;
+    color: #718096;
+}
+
+/* 📱 完美兼容手机端：屏幕变窄时自动切换为垂直单列排版 */
+@media (max-width: 768px) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+
+#global-navbar {
+    display: flex;
+    justify-content: space-between; /* 🌟 核心：两端对齐，中间拉开 */
+    align-items: center;            /* 上下垂直居中 */
+    background-color: #ffffff;
+    padding: 12px 24px;
+    border-bottom: 1px solid #e1e8ed;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    box-sizing: border-box;
+}
+
+
+/* 🌟 2. 子元素使用独特的专用前缀 g-nav__，哪怕你原本的 CSS 里有同名样式也互不干扰 */
+.g-nav__item {
+    text-decoration: none !important; /* 强制去掉所有可能继承的下划线 */
+    color: #657786 !important;       /* 确保导航字色不受页面全局字色影响 */
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* 🌟 3. 悬浮状态也进行前缀绑定 */
+.g-nav__item:hover {
+    color: #1da1f2 !important;
+    background-color: #f5f8fa !important;
+}
+
+/* 左侧标题的专属高级样式 */
+.nav-logo {
+    font-weight: bold;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+
+
+/* 🌟 当前页面对应的导航项激活状态 */
+.g-nav__item.is-active {
+    color: #1da1f2 !important;           /* 字体变成科技蓝 */
+    background-color: #e8f5fe !important; /* 背景变成很淡的蓝色底框 */
+    font-weight: bold;                   /* 字体加粗 */
+}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能展示 - 云上笔记</title>
+    
+    <!-- 引入全站统一样式表与功能展示页专属样式表 -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="display_style.css">
+</head>
+<body>
+
+    <!-- 🌟 全局导航栏空盒子，加载时全自动注入导航 -->
+    <div id="global-navbar"></div>
+
+    <div class="display-container">
+        <header class="display-header">
+            <h1>核心功能一览 ✨</h1>
+            <p class="subtitle">化繁为简，专为高效记录与现代 Web 安全而设计的核心体验</p>
+        </header>
+
+        <!-- 功能卡片列表 -->
+        <main class="cards-grid">
+            
+            <div class="card">
+                <div class="card-icon">📝</div>
+                <h3>沉浸式笔记编辑</h3>
+                <p>极简的工作台界面，拒绝繁琐的排版干扰。开箱即用，支持实时无标签输入，让你的思考流像水一样顺畅无阻。</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">🔒 </div>
+                <h3>专属私密独立沙箱</h3>
+                <p>通过硬核的白名单验证体系和防爬虫双重策略，为你开辟绝对隐形的独立工作空间，任何外界搜索引擎都无法窥探。</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">☁️</div>
+                <h3>多端动态云同步</h3>
+                <p>底层无缝对接高性能云数据库，每一次敲击键盘都伴随着毫秒级的加密数据传输，换个设备登录即可瞬间无感续写。</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <h3>极致防丢设计</h3>
+                <p>内置前端离线缓存与状态检测机制，即便遇到网络断开或意外关闭浏览器，你未保存的灵感也能得到最大程度的守护。</p>
+            </div>
+
+        </main>
+
+        <footer class="display-footer">
+            <p>准备好开始体验了吗？点击顶部“首页工作台”立刻开始记录。</p>
+        </footer>
+    </div>
+
+    <!-- 🌟 引入公共脚本：负责全自动高亮“功能展示” -->
+    <script src="common.js"></script>
+</body>
+</html>
