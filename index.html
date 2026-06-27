@@ -7,7 +7,8 @@
             default-src 'self';
             script-src 'self';
             style-src 'self';
-            connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+            connect-src 'self' https://*.supabase.co https://supabase.com wss://*.supabase.co;
+            form-action 'self' https://*.supabase.co https://supabase.com;
             img-src 'self' data:;
         ">
     <title>云上笔记 - 随心记录，云端相伴</title>
