@@ -1,4 +1,3 @@
-// 官方标准 Supabase 客户端连接器模块
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -13,7 +12,6 @@
             'Content-Type': 'application/json'
         };
 
-        // 修复：统一的 Auth 状态管理
         let authStateListeners = [];
         function notifyAuthStateChange(event, session) {
             authStateListeners.forEach(callback => callback(event, session));
@@ -23,7 +21,6 @@
             auth: {
                 onAuthStateChange: function (callback) {
                     authStateListeners.push(callback);
-                    // 立即检查当前状态
                     setTimeout(async () => {
                         const token = localStorage.getItem('sb_real_token');
                         if (token) {
@@ -63,7 +60,6 @@
                                 'Authorization': 'Bearer ' + token 
                             } 
                         });
-                        // 修复：401 也清理 Token（不仅仅是 403）
                         if (res.status === 401 || res.status === 403) {
                             localStorage.removeItem('sb_real_token');
                             return { data: { user: null }, error: { status: res.status, message: 'Token 无效' } };
@@ -107,9 +103,7 @@
                         var data = await res.json();
                         if (!res.ok) return { data: null, error: data };
                         
-                        // 修复：正确存储 Token
                         localStorage.setItem('sb_real_token', data.access_token);
-                        // 立即通知状态变化
                         const userRes = await this.getUser();
                         notifyAuthStateChange('SIGNED_IN', { user: userRes.data?.user ?? null });
                         
@@ -132,7 +126,6 @@
             from: function (tableName) {
                 return {
                     select: function (columns = '*') {
-                        // 修复：支持列选择，默认 *
                         let queryParams = [];
                         let filterField = null;
                         let filterValue = null;
@@ -147,12 +140,9 @@
                                     order: function (sortFld, opts) {
                                         sortField = sortFld;
                                         sortDirection = opts?.ascending ? 'asc' : 'desc';
-                                        // 修复：返回 Promise 而不是嵌套函数
                                         return (async function () {
                                             var token = localStorage.getItem('sb_real_token');
                                             var h = Object.assign({}, headers, { 'Authorization': 'Bearer ' + (token || supabaseKey) });
-                                            
-                                            // 构建查询参数
                                             let query = `${tableName}?${filterField}=eq.${encodeURIComponent(filterValue)}`;
                                             if (sortField) {
                                                 query += `&order=${sortField}.${sortDirection}`;
