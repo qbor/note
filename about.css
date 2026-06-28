@@ -1,4 +1,3 @@
-/* 关于我们页面的独立美化排版 */
 .about-container {
     max-width: 800px;
     margin: 40px auto;
@@ -41,7 +40,6 @@
     padding-left: 12px;
 }
 
-/* 安全特性三栏网格 */
 .features-grid {
     display: flex;
     gap: 20px;
@@ -77,7 +75,6 @@
     color: #a0aec0;
 }
 
-/* 📱 兼容手机端排版：当屏幕变窄时自动变成上下单列排版 */
 @media (max-width: 768px) {
     .features-grid {
         flex-direction: column;
@@ -85,16 +82,10 @@
 }
 
 
-
-
-
-
-
-/* 导航栏样式 */
 #global-navbar {
     display: flex;
-    justify-content: space-between; /* 🌟 核心：两端对齐，中间拉开 */
-    align-items: center;            /* 上下垂直居中 */
+    justify-content: space-between; 
+    align-items: center;          
     background-color: #ffffff;
     padding: 12px 24px;
     border-bottom: 1px solid #e1e8ed;
@@ -103,10 +94,9 @@
 }
 
 
-/* 🌟 2. 子元素使用独特的专用前缀 g-nav__，哪怕你原本的 CSS 里有同名样式也互不干扰 */
 .g-nav__item {
-    text-decoration: none !important; /* 强制去掉所有可能继承的下划线 */
-    color: #657786 !important;       /* 确保导航字色不受页面全局字色影响 */
+    text-decoration: none !important; 
+    color: #657786 !important;       
     font-size: 14px;
     font-weight: 500;
     padding: 8px 16px;
@@ -116,13 +106,11 @@
     align-items: center;
 }
 
-/* 🌟 3. 悬浮状态也进行前缀绑定 */
 .g-nav__item:hover {
     color: #1da1f2 !important;
     background-color: #f5f8fa !important;
 }
 
-/* 左侧标题的专属高级样式 */
 .nav-logo {
     font-weight: bold;
     font-size: 16px;
@@ -130,10 +118,8 @@
 }
 
 
-
-/* 🌟 当前页面对应的导航项激活状态 */
 .g-nav__item.is-active {
-    color: #1da1f2 !important;           /* 字体变成科技蓝 */
-    background-color: #e8f5fe !important; /* 背景变成很淡的蓝色底框 */
-    font-weight: bold;                   /* 字体加粗 */
+    color: #1da1f2 !important;         
+    background-color: #e8f5fe !important; 
+    font-weight: bold;              
 }
