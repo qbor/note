@@ -1,4 +1,3 @@
-/* 全局样式重置 */
 * {
     margin: 0;
     padding: 0;
@@ -28,7 +27,6 @@ textarea {
     flex-shrink: 0;
 }
 
-/* 导航栏 */
 header {
     background-color: #ffffff;
     padding: 10px 20px;
@@ -48,7 +46,6 @@ header {
     font-weight: 600;
 }
 
-/* 主体布局 */
 .main-container {
     display: flex;
     flex: 1 1 auto;
@@ -56,7 +53,6 @@ header {
     min-height: 0;
 }
 
-/* 侧边栏 */
 .sidebar {
     width: 260px;
     min-width: 260px;
@@ -171,7 +167,6 @@ header {
     -webkit-box-orient: vertical;
 }
 
-/* 编辑器区域 */
 .editor-area {
     flex: 1 1 auto;
     display: flex;
@@ -331,7 +326,6 @@ header {
     }
 }
 
-/* 顶部导航增强 */
 .header-container {
     display: flex;
     justify-content: space-between;
@@ -368,7 +362,6 @@ header {
     cursor: pointer;
 }
 
-/* 弹窗样式 */
 .modal {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -495,8 +488,8 @@ header {
 
 #global-navbar {
     display: flex;
-    justify-content: space-between; /* 🌟 核心：两端对齐，中间拉开 */
-    align-items: center;            /* 上下垂直居中 */
+    justify-content: space-between; 
+    align-items: center;        
     background-color: #ffffff;
     padding: 12px 24px;
     border-bottom: 1px solid #e1e8ed;
@@ -505,10 +498,9 @@ header {
 }
 
 
-/* 🌟 2. 子元素使用独特的专用前缀 g-nav__，哪怕你原本的 CSS 里有同名样式也互不干扰 */
 .g-nav__item {
-    text-decoration: none !important; /* 强制去掉所有可能继承的下划线 */
-    color: #657786 !important;       /* 确保导航字色不受页面全局字色影响 */
+    text-decoration: none !important; 
+    color: #657786 !important;      
     font-size: 14px;
     font-weight: 500;
     padding: 8px 16px;
@@ -518,13 +510,11 @@ header {
     align-items: center;
 }
 
-/* 🌟 3. 悬浮状态也进行前缀绑定 */
 .g-nav__item:hover {
     color: #1da1f2 !important;
     background-color: #f5f8fa !important;
 }
 
-/* 左侧标题的专属高级样式 */
 .nav-logo {
     font-weight: bold;
     font-size: 16px;
@@ -532,10 +522,8 @@ header {
 }
 
 
-
-/* 🌟 当前页面对应的导航项激活状态 */
 .g-nav__item.is-active {
-    color: #1da1f2 !important;           /* 字体变成科技蓝 */
-    background-color: #e8f5fe !important; /* 背景变成很淡的蓝色底框 */
-    font-weight: bold;                   /* 字体加粗 */
+    color: #1da1f2 !important;          
+    background-color: #e8f5fe !important; 
+    font-weight: bold;                   
 }
