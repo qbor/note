@@ -1,3 +1,6 @@
+// ==========================================
+// 1. 核心云端配置区域
+// ==========================================
 const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
 const SUPABASE_URL = (typeof window !== 'undefined' && window.location?.origin)
     ? `${window.location.origin}/supabase-api`
@@ -32,7 +35,11 @@ let notes = [];
 let activeNoteId = null;
 let currentUser = null;
 let isInitializing = false; 
+let hasInitializedStatus = false; // 新增：状态初始化锁
 
+// ==========================================
+// 2. DOM 节点获取区域
+// ==========================================
 const notesList = document.getElementById('notes-list');
 const noteTitle = document.getElementById('note-title');
 const noteContent = document.getElementById('note-content');
@@ -43,7 +50,8 @@ const deleteAccountBtn = document.getElementById('delete-account-btn');
 const userEmailSpan = document.getElementById('user-email');
 const deleteNoteBtn = document.getElementById('delete-note-btn');
 const generateTitleBtn = document.getElementById('generate-title-btn');
-const goToSecretBtn = document.getElementById('goToSecretBtn'); 
+// 兼容处理：防呆支持 goToSecretBtn 或 goToSecretBtn_secret
+const goToSecretBtn = document.getElementById('goToSecretBtn') || document.getElementById('goToSecretBtn_secret'); 
 const noteListToggleBtn = document.getElementById('noteListToggleBtn');
 const titleConfirmModal = document.getElementById('title-confirm-modal');
 const generatedTitleInput = document.getElementById('generated-title-input');
@@ -79,6 +87,9 @@ function toggleNoteList() {
     setNoteListCollapsed(!noteListCollapsed);
 }
 
+// ==========================================
+// 3. 系统初始化与事件绑定
+// ==========================================
 async function init() {
     if (isInitializing) return;
     isInitializing = true;
@@ -101,10 +112,18 @@ async function init() {
         return;
     }
 
+    // 收拢私密空间点击事件（统一走鉴权分支）
+    safeAdd(goToSecretBtn, 'click', () => {
+        if (currentUser) {
+            window.location.href = 'secret_page.html';
+        } else {
+            alert('请先登录后再访问私密空间。');
+        }
+    });
+
     mySupabase.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed:', event);
-        const user = session?.user || null;
-        await handleUserStatus(user);
+        await handleUserStatus(session?.user || null);
     });
 
     safeAdd(authBtn, 'click', async () => {
@@ -131,8 +150,6 @@ async function init() {
                 handleSubmitAuth(); 
             } 
         });
-    } else {
-        console.warn('未找到 authModal，无法监听模态框事件');
     }
 
     safeAdd(deleteNoteBtn, 'click', deleteCurrentNote);
@@ -144,6 +161,7 @@ async function init() {
     if (noteTitle) noteTitle.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
     if (noteContent) noteContent.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
 
+    // 主动兜底执行一次状态校验
     const initialUser = await getCurrentUser();
     await handleUserStatus(initialUser);
     
@@ -201,8 +219,16 @@ function setAuthButtonsEnabled(enabled) {
     if (registerModeBtn) registerModeBtn.disabled = !enabled;
 }
 
+// ==========================================
+// 4. 用户与权限状态统一控制
+// ==========================================
 async function handleUserStatus(user) {
-    if (currentUser?.id === user?.id) return;
+    const nextId = user?.id || null;
+    const prevId = currentUser?.id || null;
+
+    // 严密拦截：状态已初始化过 且 前后ID未发生改变时，直接放行（消灭并发拉取）
+    if (hasInitializedStatus && prevId === nextId) return;
+    hasInitializedStatus = true;
     
     currentUser = user;
     if (user) {
@@ -211,7 +237,7 @@ async function handleUserStatus(user) {
         authBtn.innerText = '退出登录';
         deleteAccountBtn.classList.remove('hidden');
         newNoteBtn.disabled = false;
-        goToSecretBtn.disabled = false;
+        if (goToSecretBtn) goToSecretBtn.disabled = false;
         if (noteListToggleBtn) noteListToggleBtn.disabled = false;
         noteTitle.disabled = false; 
         noteContent.disabled = false;
@@ -221,7 +247,7 @@ async function handleUserStatus(user) {
         authBtn.innerText = '登录 / 注册';
         deleteAccountBtn.classList.add('hidden');
         newNoteBtn.disabled = true;
-        goToSecretBtn.disabled = true;
+        if (goToSecretBtn) goToSecretBtn.disabled = true;
         if (noteListToggleBtn) noteListToggleBtn.disabled = true;
         noteTitle.disabled = true;
         noteContent.disabled = true;
@@ -239,14 +265,9 @@ async function getCurrentUser() {
     const { data, error } = await mySupabase.auth.getUser();
     if (error) {
         console.error('获取当前用户失败:', error);
-        localStorage.removeItem('sb_real_token');
         return null;
     }
     return data?.user ?? null;
-}
-
-function getAccessToken() {
-    return localStorage.getItem('sb_real_token');
 }
 
 async function handleDeleteAccount() {
@@ -257,19 +278,12 @@ async function handleDeleteAccount() {
     authBtn.disabled = true;
     saveStatus.innerText = '正在注销账户...';
 
-    const token = getAccessToken();
-    if (!token) {
-        alert('未检测到有效登录凭证，请先重新登录后再试。');
-        await mySupabase.auth.signOut();
-        deleteAccountBtn.disabled = false;
-        authBtn.disabled = false;
-        saveStatus.innerText = '注销失败';
-        return;
-    }
+    // 标准做法：向 SDK 索要当前活动的 Session 凭证
+    const { data: { session }, error: sessionError } = await mySupabase.auth.getSession();
+    const token = session?.access_token;
 
-    const { data: userData, error: userError } = await mySupabase.auth.getUser();
-    if (userError || !userData?.user) {
-        alert('当前登录凭证已失效，请重新登录后再尝试注销账户。');
+    if (sessionError || !token) {
+        alert('未检测到有效登录凭证，请先重新登录后再试。');
         await mySupabase.auth.signOut();
         deleteAccountBtn.disabled = false;
         authBtn.disabled = false;
@@ -310,39 +324,30 @@ async function handleDeleteAccount() {
 }
 
 function getEmailRedirectUrl() {
-    if (!redirectCheckbox || !redirectCheckbox.checked) {
-        return null;
-    }
-    if (EMAIL_CONFIRM_REDIRECT) {
-        return EMAIL_CONFIRM_REDIRECT;
-    }
+    if (!redirectCheckbox || !redirectCheckbox.checked) return null;
+    if (EMAIL_CONFIRM_REDIRECT) return EMAIL_CONFIRM_REDIRECT;
     if (typeof window !== 'undefined' && (window.location.protocol === 'http:' || window.location.protocol === 'https:')) {
         return window.location.origin;
     }
     return null;
 }
 
+// ==========================================
+// 5. 注册与登录
+// ==========================================
 async function handleRegister() {
-    if (!emailInput?.value || !passwordInput?.value) {
-        return showAuthError('请输入完整的邮箱和密码');
-    }
+    if (!emailInput?.value || !passwordInput?.value) return showAuthError('请输入完整的邮箱和密码');
 
     saveStatus.innerText = '正在提交注册...';
     setAuthButtonsEnabled(false);
 
     const redirectUrl = getEmailRedirectUrl();
-    const signUpParams = {
-        email: emailInput.value,
-        password: passwordInput.value
-    };
-    if (redirectUrl) {
-        signUpParams.options = { emailRedirectTo: redirectUrl };
-    }
+    const signUpParams = { email: emailInput.value, password: passwordInput.value };
+    if (redirectUrl) signUpParams.options = { emailRedirectTo: redirectUrl };
 
     const { data, error } = await mySupabase.auth.signUp(signUpParams);
     if (error) {
-        const errorMsg = error.message || error.msg || error.error_description || JSON.stringify(error);
-        showAuthError('注册失败：' + errorMsg);
+        showAuthError('注册失败：' + (error.message || error.msg || JSON.stringify(error)));
         setAuthButtonsEnabled(true);
         return;
     }
@@ -359,8 +364,7 @@ async function handleRegister() {
     saveStatus.innerText = '注册成功，正在自动登录...';
     const { error: loginError } = await mySupabase.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
     if (loginError) {
-        const errorMsg = loginError.message || loginError.msg || loginError.error_description || JSON.stringify(loginError);
-        showAuthError('注册成功，但自动登录失败：' + errorMsg);
+        showAuthError('注册成功，但自动登录失败：' + (loginError.message || JSON.stringify(loginError)));
         setAuthButtonsEnabled(true);
         return;
     }
@@ -372,20 +376,18 @@ async function handleRegister() {
 }
 
 async function handleLogin() {
-    if (!emailInput?.value || !passwordInput?.value) {
-        return showAuthError('请输入邮箱和密码');
-    }
+    if (!emailInput?.value || !passwordInput?.value) return showAuthError('请输入邮箱和密码');
 
     saveStatus.innerText = '正在验证登录...';
     setAuthButtonsEnabled(false);
 
     const { error } = await mySupabase.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
     if (error) {
-        const errorMsg = error.message || error.msg || error.error_description || JSON.stringify(error);
-        showAuthError('登录失败：' + errorMsg);
+        showAuthError('登录失败：' + (error.message || error.msg || JSON.stringify(error)));
         setAuthButtonsEnabled(true);
         return;
     }
+
     const user = await getCurrentUser();
     if (user) {
         handleUserStatus(user);
@@ -406,6 +408,9 @@ async function handleSubmitAuth() {
     }
 }
 
+// ==========================================
+// 6. 云端拉取、渲染、加载笔记
+// ==========================================
 async function fetchNotesFromCloud() {
     if (!currentUser) {
         saveStatus.innerText = '未登录，无法同步云端';
@@ -414,12 +419,11 @@ async function fetchNotesFromCloud() {
 
     saveStatus.innerText = '正在同步云端...';
     try {
-        const queryResult = await mySupabase.from('notes')
+        const { data, error } = await mySupabase.from('notes')
             .select('*')
             .eq('user_id', currentUser.id)
             .order('id', { ascending: false });
         
-        const { data, error } = queryResult;
         if (error) throw error;
 
         notes = data || [];
@@ -463,10 +467,7 @@ function renderNotesList() {
 
         div.appendChild(titleDiv);
         div.addEventListener('click', () => {
-            if (!currentUser) {
-                alert('请先登录后再查看笔记');
-                return;
-            }
+            if (!currentUser) return alert('请先登录后再查看笔记');
             activeNoteId = note.id;
             renderNotesList();
             loadActiveNote();
@@ -495,20 +496,18 @@ function loadActiveNote() {
     }
 }
 
-
+// ==========================================
+// 7. 云端新建、更新、删除逻辑
+// ==========================================
 async function createNewNote() {
-    if (!currentUser) {
-        saveStatus.innerText = '请先登录后再创建笔记';
-        return;
-    }
+    if (!currentUser) return saveStatus.innerText = '请先登录后再创建笔记';
 
     newNoteBtn.disabled = true;
     saveStatus.innerText = '正在创建新笔记...';
 
     try {
         const newNoteData = { user_id: currentUser.id, title: '新笔记', content: '' };
-        const insertResult = await mySupabase.from('notes').insert([newNoteData]).select();
-        const { data, error } = insertResult;
+        const { data, error } = await mySupabase.from('notes').insert([newNoteData]).select();
         
         if (error) throw error;
         const createdNote = Array.isArray(data) ? data[0] : data;
@@ -523,7 +522,7 @@ async function createNewNote() {
         }
     } catch (error) {
         console.error('创建新笔记失败:', error);
-        saveStatus.innerText = '新建笔记失败：' + (error.message || '请确认 Supabase 表配置正常');
+        saveStatus.innerText = '新建笔记失败：' + (error.message || '请确认表配置');
     }
     
     newNoteBtn.disabled = false;
@@ -568,12 +567,12 @@ async function confirmGeneratedTitle() {
     saveStatus.innerText = '正在保存标题...';
     confirmTitleBtn.disabled = true;
     try {
-        const updateResult = await mySupabase.from('notes')
+        const { error } = await mySupabase.from('notes')
             .update({ title: newTitle })
             .eq('id', activeNoteId)
             .eq('user_id', currentUser.id);
         
-        if (updateResult.error) throw updateResult.error;
+        if (error) throw error;
 
         const currentNote = getCurrentNote();
         if (currentNote) currentNote.title = newTitle;
@@ -608,21 +607,16 @@ function updateCurrentNote() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
         try {
-            const updateResult = await mySupabase.from('notes')
+            const { error } = await mySupabase.from('notes')
                 .update({ title: targetTitle, content: targetContent })
                 .eq('id', targetSaveId)
                 .eq('user_id', currentUser.id);
             
-            if (updateResult.error) throw updateResult.error;
-            
-            if (activeNoteId === targetSaveId) {
-                saveStatus.innerText = '所有更改已实时保存至云端';
-            }
+            if (error) throw error;
+            if (activeNoteId === targetSaveId) saveStatus.innerText = '所有更改已实时保存至云端';
         } catch (error) {
             console.error('自动保存笔记失败:', error);
-            if (activeNoteId === targetSaveId) {
-                saveStatus.innerText = '保存失败：' + error.message;
-            }
+            if (activeNoteId === targetSaveId) saveStatus.innerText = '保存失败：' + error.message;
         }
     }, 800);
 }
@@ -635,12 +629,12 @@ async function deleteCurrentNote() {
     saveStatus.innerText = '正在从云端删除...';
     
     try {
-        const deleteResult = await mySupabase.from('notes')
+        const { error } = await mySupabase.from('notes')
             .delete()
             .eq('id', activeNoteId)
             .eq('user_id', currentUser.id);
         
-        if (deleteResult.error) throw deleteResult.error;
+        if (error) throw error;
 
         notes = notes.filter(n => n.id !== activeNoteId);
         activeNoteId = notes.length > 0 ? notes[0].id : null;
@@ -667,10 +661,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startApp);
 } else {
     startApp();
-}
-
-if (goToSecretBtn) {
-    goToSecretBtn.addEventListener('click', () => {
-        window.location.href = 'secret_page.html';
-    });
 }
