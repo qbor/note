@@ -58,7 +58,6 @@ function renderSecretNotes() {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `secret-note-item${note.id === activeSecretNoteId ? ' active' : ''}`;
-        // 修复：XSS 防护更严谨
         const safeTitle = (note.title || '无标题私密笔记').replace(/[&<>"']/g, char => {
             const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
             return entities[char] || char;
@@ -109,7 +108,6 @@ function showGuestState() {
         workAreaEl.classList.add('hidden');
     }
     setStatus('请先登录后再访问私密空间', true);
-    // 修复：延迟跳转增加提示时间
     window.setTimeout(() => {
         window.location.replace('index.html');
     }, 2000);
@@ -126,7 +124,6 @@ async function initSecretPage() {
 
     isInitializing = true;
     try {
-        // 修复：先验证登录状态，再监听变化
         const { data, error } = await mySupabase.auth.getUser();
         if (error || !data?.user) {
             showGuestState();
@@ -151,7 +148,7 @@ async function initSecretPage() {
             currentUser = session.user;
             if (authStatusEl) authStatusEl.classList.add('hidden');
             if (workAreaEl) workAreaEl.classList.remove('hidden');
-            await loadSecretNotes(); // 修复：异步加载笔记
+            await loadSecretNotes(); 
         });
 
         await loadSecretNotes();
@@ -168,7 +165,6 @@ async function loadSecretNotes() {
 
     setStatus('正在加载私密笔记...');
     try {
-        // 修复：正确处理查询返回值
         const queryResult = await mySupabase.from('secret_notes')
             .select('*')
             .eq('user_id', currentUser.id)
@@ -224,7 +220,6 @@ async function handleSaveNote() {
 
     try {
         if (activeSecretNoteId) {
-            // 修复：更新时增加 user_id 过滤，防止越权
             const updateResult = await mySupabase.from('secret_notes')
                 .update({ title: payload.title, content, updated_at: now })
                 .eq('id', activeSecretNoteId)
@@ -243,7 +238,6 @@ async function handleSaveNote() {
             return;
         }
 
-        // 新增笔记时补充 created_at
         payload.created_at = now;
         const insertResult = await mySupabase.from('secret_notes')
             .insert([payload])
@@ -276,7 +270,6 @@ async function deleteCurrentNote() {
 
     setStatus('正在删除...');
     try {
-        // 修复：删除时增加 user_id 过滤
         const deleteResult = await mySupabase.from('secret_notes')
             .delete()
             .eq('id', activeSecretNoteId)
@@ -300,7 +293,6 @@ async function deleteCurrentNote() {
     }
 }
 
-// 修复：事件绑定增加存在性检查和防抖
 if (saveBtn) {
     saveBtn.addEventListener('click', handleSaveNote);
 }
@@ -330,7 +322,6 @@ if (backToHomeBtn) {
     });
 }
 
-// 修复：DOM 加载完成后初始化
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSecretPage);
 } else {
