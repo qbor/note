@@ -1,6 +1,3 @@
-// ==========================================
-// 1. 核心云端配置区域
-// ==========================================
 const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
 const SUPABASE_URL = (typeof window !== 'undefined' && window.location?.origin)
     ? `${window.location.origin}/supabase-api`
@@ -22,9 +19,6 @@ const mySupabase = (typeof GLOBAL_SUPABASE !== 'undefined' && GLOBAL_SUPABASE !=
     })
     : null;
 
-// 如果你希望邮箱确认后跳转到你的 Vercel 部署站点，请在这里填写完整地址。
-// 注意：该 URL 必须在 Supabase 项目 Auth 重定向 URL 中允许。
-// 推荐使用当前页面地址，避免写死到错误的路径。
 const EMAIL_CONFIRM_REDIRECT = (() => {
     if (typeof window !== 'undefined' && window.location?.protocol?.startsWith('http')) {
         const normalizedPath = window.location.pathname.replace(/index\.html$/i, '').replace(/\/+$/, '');
@@ -37,11 +31,8 @@ const EMAIL_CONFIRM_REDIRECT = (() => {
 let notes = [];
 let activeNoteId = null;
 let currentUser = null;
-let isInitializing = false; // 新增：防止重复初始化
+let isInitializing = false; 
 
-// ==========================================
-// 2. DOM 节点获取区域
-// ==========================================
 const notesList = document.getElementById('notes-list');
 const noteTitle = document.getElementById('note-title');
 const noteContent = document.getElementById('note-content');
@@ -52,7 +43,7 @@ const deleteAccountBtn = document.getElementById('delete-account-btn');
 const userEmailSpan = document.getElementById('user-email');
 const deleteNoteBtn = document.getElementById('delete-note-btn');
 const generateTitleBtn = document.getElementById('generate-title-btn');
-const goToSecretBtn = document.getElementById('goToSecretBtn'); // 修复：ID 拼写错误（原代码是goToSecretBtn但HTML里是goToSecretBtn_secret）
+const goToSecretBtn = document.getElementById('goToSecretBtn'); 
 const noteListToggleBtn = document.getElementById('noteListToggleBtn');
 const titleConfirmModal = document.getElementById('title-confirm-modal');
 const generatedTitleInput = document.getElementById('generated-title-input');
@@ -88,14 +79,10 @@ function toggleNoteList() {
     setNoteListCollapsed(!noteListCollapsed);
 }
 
-// ==========================================
-// 3. 系统初始化与事件绑定
-// ==========================================
 async function init() {
     if (isInitializing) return;
     isInitializing = true;
 
-    // 初始化完成，开始绑定事件（调试日志已移除）
     function safeAdd(el, evt, handler) {
         if (el && typeof el.addEventListener === 'function') {
             el.addEventListener(evt, handler);
@@ -114,7 +101,6 @@ async function init() {
         return;
     }
 
-    // 修复：正确监听登录状态变化
     mySupabase.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed:', event);
         const user = session?.user || null;
@@ -158,7 +144,6 @@ async function init() {
     if (noteTitle) noteTitle.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
     if (noteContent) noteContent.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
 
-    // 修复：等待登录状态确认后再初始化
     const initialUser = await getCurrentUser();
     await handleUserStatus(initialUser);
     
@@ -216,11 +201,7 @@ function setAuthButtonsEnabled(enabled) {
     if (registerModeBtn) registerModeBtn.disabled = !enabled;
 }
 
-// ==========================================
-// 4. 用户与权限状态统一控制
-// ==========================================
 async function handleUserStatus(user) {
-    // 修复：严格判断用户是否变化
     if (currentUser?.id === user?.id) return;
     
     currentUser = user;
@@ -232,9 +213,9 @@ async function handleUserStatus(user) {
         newNoteBtn.disabled = false;
         goToSecretBtn.disabled = false;
         if (noteListToggleBtn) noteListToggleBtn.disabled = false;
-        noteTitle.disabled = false; // 修复：登录后启用编辑框
+        noteTitle.disabled = false; 
         noteContent.disabled = false;
-        await fetchNotesFromCloud(); // 修复：异步等待笔记加载
+        await fetchNotesFromCloud(); 
     } else {
         userEmailSpan.innerText = '';
         authBtn.innerText = '登录 / 注册';
@@ -255,11 +236,9 @@ async function handleUserStatus(user) {
 
 async function getCurrentUser() {
     if (!mySupabase) return null;
-    // 修复：正确获取用户信息，处理 Token 逻辑
     const { data, error } = await mySupabase.auth.getUser();
     if (error) {
         console.error('获取当前用户失败:', error);
-        // 清理无效 Token
         localStorage.removeItem('sb_real_token');
         return null;
     }
@@ -267,7 +246,6 @@ async function getCurrentUser() {
 }
 
 function getAccessToken() {
-    // 修复：统一 Token 存储键名
     return localStorage.getItem('sb_real_token');
 }
 
@@ -344,9 +322,6 @@ function getEmailRedirectUrl() {
     return null;
 }
 
-// ==========================================
-// 5. 注册与登录
-// ==========================================
 async function handleRegister() {
     if (!emailInput?.value || !passwordInput?.value) {
         return showAuthError('请输入完整的邮箱和密码');
@@ -411,8 +386,6 @@ async function handleLogin() {
         setAuthButtonsEnabled(true);
         return;
     }
-
-    // 修复：登录成功后主动获取用户信息
     const user = await getCurrentUser();
     if (user) {
         handleUserStatus(user);
@@ -433,9 +406,6 @@ async function handleSubmitAuth() {
     }
 }
 
-// ==========================================
-// 6. 云端拉取、渲染、加载笔记
-// ==========================================
 async function fetchNotesFromCloud() {
     if (!currentUser) {
         saveStatus.innerText = '未登录，无法同步云端';
@@ -444,7 +414,6 @@ async function fetchNotesFromCloud() {
 
     saveStatus.innerText = '正在同步云端...';
     try {
-        // 修复：正确调用 Supabase 查询（原链式调用返回 Promise 未正确处理）
         const queryResult = await mySupabase.from('notes')
             .select('*')
             .eq('user_id', currentUser.id)
@@ -519,16 +488,14 @@ function loadActiveNote() {
     } else {
         noteTitle.value = ''; 
         noteContent.value = '';
-        noteTitle.disabled = !currentUser; // 修复：登录后即使无笔记也启用标题框
+        noteTitle.disabled = !currentUser; 
         noteContent.disabled = !currentUser;
         deleteNoteBtn.disabled = true;
         generateTitleBtn.disabled = true;
     }
 }
 
-// ==========================================
-// 7. 云端新建、更新、删除逻辑
-// ==========================================
+
 async function createNewNote() {
     if (!currentUser) {
         saveStatus.innerText = '请先登录后再创建笔记';
@@ -540,7 +507,6 @@ async function createNewNote() {
 
     try {
         const newNoteData = { user_id: currentUser.id, title: '新笔记', content: '' };
-        // 修复：正确处理插入返回值
         const insertResult = await mySupabase.from('notes').insert([newNoteData]).select();
         const { data, error } = insertResult;
         
@@ -575,12 +541,10 @@ async function generateTitleFromContent() {
     generateTitleBtn.disabled = true;
     saveStatus.innerText = '正在生成标题...';
 
-    // 取内容第一段或首行作为候选标题，限制长度
     const lines = noteContent.value.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     let candidate = lines.length > 0 ? lines[0] : noteContent.value.trim();
     if (candidate.length > 60) candidate = candidate.slice(0, 57) + '...';
 
-    // 在弹窗中显示并允许编辑确认
     generatedTitleInput.value = candidate;
     showTitleConfirmModal();
     generateTitleBtn.disabled = false;
@@ -604,7 +568,6 @@ async function confirmGeneratedTitle() {
     saveStatus.innerText = '正在保存标题...';
     confirmTitleBtn.disabled = true;
     try {
-        // 修复：增加 user_id 过滤，防止越权修改
         const updateResult = await mySupabase.from('notes')
             .update({ title: newTitle })
             .eq('id', activeNoteId)
@@ -645,7 +608,6 @@ function updateCurrentNote() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
         try {
-            // 修复：增加 user_id 过滤，异步错误处理
             const updateResult = await mySupabase.from('notes')
                 .update({ title: targetTitle, content: targetContent })
                 .eq('id', targetSaveId)
@@ -669,7 +631,6 @@ async function deleteCurrentNote() {
     if (!activeNoteId || !currentUser) return;
     if (!confirm('确定要删除这篇笔记吗？此操作不可撤销。')) return;
     
-    // 💡 同样在删除期间禁用按钮防御连击
     deleteNoteBtn.disabled = true;
     saveStatus.innerText = '正在从云端删除...';
     
@@ -693,7 +654,6 @@ async function deleteCurrentNote() {
     deleteNoteBtn.disabled = false;
 }
 
-// 启动发令枪
 function startApp() {
     try {
         init();
@@ -709,7 +669,6 @@ if (document.readyState === 'loading') {
     startApp();
 }
 
-// 修复：私密空间跳转按钮绑定
 if (goToSecretBtn) {
     goToSecretBtn.addEventListener('click', () => {
         window.location.href = 'secret_page.html';
