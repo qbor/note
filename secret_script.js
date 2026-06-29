@@ -1,5 +1,4 @@
 {
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7";
 
