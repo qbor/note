@@ -1,6 +1,3 @@
-// ==========================================
-// 1. 核心云端配置区域
-// ==========================================
 const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
 const SUPABASE_URL = (typeof window !== 'undefined' && window.location?.origin)
     ? `${window.location.origin}/supabase-api`
@@ -35,11 +32,7 @@ let notes = [];
 let activeNoteId = null;
 let currentUser = null;
 let isInitializing = false; 
-let hasInitializedStatus = false; // 新增：状态初始化锁
-
-// ==========================================
-// 2. DOM 节点获取区域
-// ==========================================
+let hasInitializedStatus = false; 
 const notesList = document.getElementById('notes-list');
 const noteTitle = document.getElementById('note-title');
 const noteContent = document.getElementById('note-content');
@@ -50,7 +43,6 @@ const deleteAccountBtn = document.getElementById('delete-account-btn');
 const userEmailSpan = document.getElementById('user-email');
 const deleteNoteBtn = document.getElementById('delete-note-btn');
 const generateTitleBtn = document.getElementById('generate-title-btn');
-// 兼容处理：防呆支持 goToSecretBtn 或 goToSecretBtn_secret
 const goToSecretBtn = document.getElementById('goToSecretBtn') || document.getElementById('goToSecretBtn_secret'); 
 const noteListToggleBtn = document.getElementById('noteListToggleBtn');
 const titleConfirmModal = document.getElementById('title-confirm-modal');
@@ -87,9 +79,6 @@ function toggleNoteList() {
     setNoteListCollapsed(!noteListCollapsed);
 }
 
-// ==========================================
-// 3. 系统初始化与事件绑定
-// ==========================================
 async function init() {
     if (isInitializing) return;
     isInitializing = true;
@@ -112,7 +101,6 @@ async function init() {
         return;
     }
 
-    // 收拢私密空间点击事件（统一走鉴权分支）
     safeAdd(goToSecretBtn, 'click', () => {
         if (currentUser) {
             window.location.href = 'secret_page.html';
@@ -161,7 +149,6 @@ async function init() {
     if (noteTitle) noteTitle.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
     if (noteContent) noteContent.addEventListener('input', () => { saveStatus.innerText = '修改中...'; updateCurrentNote(); });
 
-    // 主动兜底执行一次状态校验
     const initialUser = await getCurrentUser();
     await handleUserStatus(initialUser);
     
@@ -218,15 +205,10 @@ function setAuthButtonsEnabled(enabled) {
     if (loginModeBtn) loginModeBtn.disabled = !enabled;
     if (registerModeBtn) registerModeBtn.disabled = !enabled;
 }
-
-// ==========================================
-// 4. 用户与权限状态统一控制
-// ==========================================
 async function handleUserStatus(user) {
     const nextId = user?.id || null;
     const prevId = currentUser?.id || null;
 
-    // 严密拦截：状态已初始化过 且 前后ID未发生改变时，直接放行（消灭并发拉取）
     if (hasInitializedStatus && prevId === nextId) return;
     hasInitializedStatus = true;
     
@@ -277,8 +259,6 @@ async function handleDeleteAccount() {
     deleteAccountBtn.disabled = true;
     authBtn.disabled = true;
     saveStatus.innerText = '正在注销账户...';
-
-    // 标准做法：向 SDK 索要当前活动的 Session 凭证
     const { data: { session }, error: sessionError } = await mySupabase.auth.getSession();
     const token = session?.access_token;
 
@@ -331,10 +311,6 @@ function getEmailRedirectUrl() {
     }
     return null;
 }
-
-// ==========================================
-// 5. 注册与登录
-// ==========================================
 async function handleRegister() {
     if (!emailInput?.value || !passwordInput?.value) return showAuthError('请输入完整的邮箱和密码');
 
@@ -407,10 +383,6 @@ async function handleSubmitAuth() {
         await handleRegister();
     }
 }
-
-// ==========================================
-// 6. 云端拉取、渲染、加载笔记
-// ==========================================
 async function fetchNotesFromCloud() {
     if (!currentUser) {
         saveStatus.innerText = '未登录，无法同步云端';
@@ -495,10 +467,6 @@ function loadActiveNote() {
         generateTitleBtn.disabled = true;
     }
 }
-
-// ==========================================
-// 7. 云端新建、更新、删除逻辑
-// ==========================================
 async function createNewNote() {
     if (!currentUser) return saveStatus.innerText = '请先登录后再创建笔记';
 
