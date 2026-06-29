@@ -1,22 +1,15 @@
-const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
-const SUPABASE_URL = (typeof window !== 'undefined' && window.location?.origin)
-    ? `${window.location.origin}/supabase-api`
-    : (SUPABASE_CONFIG.url || '');
-const SUPABASE_KEY = SUPABASE_CONFIG.key || 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
-const mySupabase = (typeof window !== 'undefined' && window.supabase)
-    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-        auth: {
-            redirectTo: typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''
-        }
-    })
-    : null;
+{
+var SUPABASE_CONFIG = typeof SUPABASE_CONFIG !== 'undefined' ? SUPABASE_CONFIG : {};
+var SUPABASE_URL = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
+var SUPABASE_KEY = typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '';
+var mySupabase = typeof mySupabase !== 'undefined' ? mySupabase : null;
 
 let secretNotes = [];
 let activeSecretNoteId = null;
 let currentUser = null;
 let isInitializing = false;
-let hasLoadedNotesOnce = false; // 新增：双发并发拦截锁
-let hasUnsavedChanges = false;  // 新增：编辑内容脏状态锁（防内容蒸发）
+let hasLoadedNotesOnce = false; 
+let hasUnsavedChanges = false;  
 
 const authStatusEl = document.getElementById('authStatus');
 const workAreaEl = document.getElementById('workArea');
@@ -37,7 +30,6 @@ function setStatus(message, isError = false) {
     statusMsg.style.color = isError ? '#e74c3c' : '#2ecc71';
 }
 
-// 核心防呆：未保存询问拦截
 function confirmDiscardUnsaved() {
     if (!hasUnsavedChanges) return true;
     return confirm('当前笔记有尚未保存的修改，确定要放弃修改并离开吗？');
@@ -91,8 +83,8 @@ function renderSecretNotes() {
 }
 
 function selectSecretNote(noteId) {
-    if (activeSecretNoteId === noteId) return; // 避免重复点击当前条目
-    if (!confirmDiscardUnsaved()) return;      // 拦截未保存切换
+    if (activeSecretNoteId === noteId) return; 
+    if (!confirmDiscardUnsaved()) return;      
 
     const note = secretNotes.find((item) => item.id === noteId);
     if (!note) return;
@@ -101,7 +93,7 @@ function selectSecretNote(noteId) {
     if (secretTitleInput) secretTitleInput.value = note.title || '';
     if (secretNoteTextarea) secretNoteTextarea.value = note.content || '';
     
-    hasUnsavedChanges = false; // 重置脏状态
+    hasUnsavedChanges = false; 
     renderSecretNotes();
     showEditorArea();
     setStatus('已加载当前私密笔记');
@@ -229,7 +221,7 @@ async function handleSaveNote() {
         updated_at: now
     };
 
-    if (saveBtn) saveBtn.disabled = true; // 防连击锁
+    if (saveBtn) saveBtn.disabled = true; 
     setStatus('正在保存...');
     showEditorArea();
 
@@ -306,20 +298,16 @@ async function deleteCurrentNote() {
         if (deleteSecretBtn) deleteSecretBtn.disabled = false;
     }
 }
-
-// ==========================================
-// 事件绑定区域
-// ==========================================
 if (saveBtn) saveBtn.addEventListener('click', handleSaveNote);
 if (deleteSecretBtn) deleteSecretBtn.addEventListener('click', deleteCurrentNote);
 
 if (newSecretNoteBtn) {
     newSecretNoteBtn.addEventListener('click', () => {
         if (!currentUser || !mySupabase) return setStatus('请先登录后再创建私密笔记', true);
-        if (!confirmDiscardUnsaved()) return; // 拦截未保存新建
+        if (!confirmDiscardUnsaved()) return; 
 
         clearEditor();
-        renderSecretNotes(); // 修复：同步清除左侧列表高亮
+        renderSecretNotes(); 
         showEditorArea();
         setStatus('请输入私密笔记内容，然后点击保存。');
         if (secretTitleInput) secretTitleInput.focus();
@@ -332,12 +320,9 @@ if (backToHomeBtn) {
         window.location.href = 'index.html';
     });
 }
-
-// 监听键盘输入，实时挂载“脏状态”标记
 if (secretTitleInput) secretTitleInput.addEventListener('input', markDirty);
 if (secretNoteTextarea) secretNoteTextarea.addEventListener('input', markDirty);
 
-// 终极防呆：用户在未保存状态下直接关闭浏览器标签页、或按F5刷新时，强制弹窗拦截
 window.addEventListener('beforeunload', (e) => {
     if (hasUnsavedChanges) {
         e.preventDefault();
@@ -349,4 +334,5 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSecretPage);
 } else {
     initSecretPage();
+}
 }
