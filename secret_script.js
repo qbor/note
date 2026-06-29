@@ -1,6 +1,24 @@
 {
-const SUPABASE_URL = "https://supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7";
+const SUPABASE_CONFIG = (typeof window !== 'undefined' && window.__SUPABASE_CONFIG__) || {};
+const SUPABASE_URL = (typeof window !== 'undefined' && window.location?.origin)
+    ? `${window.location.origin}/supabase-api`
+    : (SUPABASE_CONFIG.url || '');
+const SUPABASE_KEY = SUPABASE_CONFIG.key || 'sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7';
+const DEFAULT_SITE_URL = (typeof window !== 'undefined' && window.location?.origin)
+    ? window.location.origin
+    : '/';
+
+const GLOBAL_SUPABASE = (typeof window !== 'undefined') ? window.supabase : undefined;
+if (!GLOBAL_SUPABASE) {
+    console.warn('Supabase SDK 未检测到。请确认 supabase.js 已正确引入。');
+}
+const mySupabase = (typeof GLOBAL_SUPABASE !== 'undefined' && GLOBAL_SUPABASE !== null)
+    ? GLOBAL_SUPABASE.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: {
+            redirectTo: typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''
+        }
+    })
+    : null;
 
 
 let secretNotes = [];
