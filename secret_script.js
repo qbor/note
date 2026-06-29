@@ -1,8 +1,8 @@
 {
-var SUPABASE_CONFIG = typeof SUPABASE_CONFIG !== 'undefined' ? SUPABASE_CONFIG : {};
-var SUPABASE_URL = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
-var SUPABASE_KEY = typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '';
-var mySupabase = typeof mySupabase !== 'undefined' ? mySupabase : null;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_URL = "https://supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_5YdNr0DOSwAGpGKhvz0V_Q_6X_G8Qc7";
+
 
 let secretNotes = [];
 let activeSecretNoteId = null;
